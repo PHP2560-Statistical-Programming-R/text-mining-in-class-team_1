@@ -22,7 +22,7 @@ Do the above. Can't think of a data source?
 - `AssociatedPress` from the `topicmodels` package
 - `NYTimes` or `USCongress` from the `RTextTools` package
 - Harry Potter Complete 7 Books text
-    ```
+    ```{r}
     if (packageVersion("devtools") < 1.6) {
   install.packages("devtools")
 }
