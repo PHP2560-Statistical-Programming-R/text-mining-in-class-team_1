@@ -2,15 +2,6 @@
 title: "Text Analyis"
 output: github_document
 ---
-questions for analysis: 
-1. what is the most important charecter based on how much is whas mentioned ? 
-2. what is the most scariest book based on sentiment analysis ?
-3. what the top ten used words in exception to stop words ?
-4. sentiments by books 
-5. sentiment by popularity based on "https://www.theguardian.com/news/datablog/2012/aug/09/best-selling-books-all-time-fifty-shades-grey-compare" "
-and the sixth question is unique for every student 
-
-
 
 # Your mission
 
@@ -29,13 +20,10 @@ Do the above. Can't think of a data source?
 - `NYTimes` or `USCongress` from the `RTextTools` package
 - Harry Potter Complete 7 Books text
 ```{r} 
-
-    if (packageVersion("devtools") < 1.6) {
+  if (packageVersion("devtools") < 1.6) {
   install.packages("devtools")}
-
-
-devtools::install_github("bradleyboehmke/harrypotter")
-    ```
+  devtools::install_github("bradleyboehmke/harrypotter")
+```
 - [State of the Union speeches](https://pradeepadhokshaja.wordpress.com/2017/03/31/scraping-the-web-for-presdential-inaugural-addresses-using-rvest/)
 - Scrape tweets using [`twitteR`](https://www.credera.com/blog/business-intelligence/twitter-analytics-using-r-part-1-extract-tweets/)
 
@@ -55,5 +43,19 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 library(dplyr)
 library(stringi)
 library(harrypotter)
+library(tidytext)
+```
 
+Questions for analysis: 
+1. what is the most important charecter based on how much is whas mentioned ? 
+2. what is the most scariest book based on sentiment analysis ?
+3. what the top ten used words in exception to stop words ?
+4. sentiments by books 
+5. sentiment by popularity based on "https://www.theguardian.com/news/datablog/2012/aug/09/best-selling-books-all-time-fifty-shades-grey-compare" "
+and the sixth question is unique for every student 
+
+```{r}
+Book1 <- data_frame(text=harrypotter::philosophers_stone)
+Book1_tidy <- Book1 %>%
+  unnest_tokens(word,text)
 ```
