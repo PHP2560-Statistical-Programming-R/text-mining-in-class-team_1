@@ -103,7 +103,7 @@ hp_list <- list(harrypotter::philosophers_stone,
                 )
 ```
 
-## 1.2 Tokenize the text into single words, strip away all punctuation and capitalization, and add columns to the tibble for the book and chapter.
+## 1.2 Place all of the books in the Harry Potter series into a tibble. Then tokenize the text into single words, strip away all punctuation and capitalization, and add columns to the tibble for the book and chapter.
 ```{r}
 ##Each book is an array in which each value in the array is a chapter 
 series <- tibble()
