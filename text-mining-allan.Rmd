@@ -44,6 +44,8 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 - Ask questions about the data
 - Answer these questions with the data using tables and graphics
 - Each group member must have their own unique question that they code the answer for. 
+
+## Package installation
 ```{r, message=FALSE, warning=FALSE, eval=FALSE}
 #install.packages("janeaustenr")  # for book by janeaustenr
 #install.packages("gutenbergr")  # for free ebooks
@@ -55,9 +57,13 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 #install.packages("wordcloud") # word-cloud generator 
 #install.packages("RColorBrewer") # color palettes
 
+if (packageVersion("devtools") < 1.6) {
+  install.packages("devtools")
+}
+devtools::install_github("bradleyboehmke/harrypotter")
 ```
 
-
+## Loading required packages
 ```{r message=FALSE, warning=FALSE}
 library(janeaustenr)
 library(gutenbergr)
@@ -67,60 +73,93 @@ library(tidytext)
 library(ggplot2)
 library(wordcloud)
 library(RColorBrewer)
-
+library(harrypotter)
 
 ```
+
+## Merging data from different sources
 Let’s start with that, and also use mutate() to annotate a linenumber quantity to keep track of lines in the original format and a chapter (using a regex) to find where all the chapters are.
 ```{r}
-#cleaning data
-# Convert the text to lower case
-# Remove english common stopwords eg the, for, e.t.c
-original_books <- austen_books() %>%
-  group_by(book) %>%
-  mutate(linenumber = row_number(),
-         chapter = cumsum(str_detect(text, regex("^chapter [\\divxlc]",
-                                                 ignore_case = TRUE)))) %>%
+
+# Fetch Book metadata from theGuardian.com e.g publisher, ranking, sales, author e.t.c 
+bookMetadata <- read.csv("https://docs.google.com/spreadsheets/d/1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA/export?format=csv&id=1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA&gid=0")
+
+# Combine all The Harry Potter books into 1 dataframe and add column which will be used a reference "Title"
+
+book1 <- data_frame(Title="Harry Potter and the Philosopher's Stone", text=philosophers_stone)
+book2 <- data_frame(Title="Harry Potter and the Chamber of Secrets", text=chamber_of_secrets)
+book3 <- data_frame(Title="Harry Potter and the Prisoner of Azkaban", text=prisoner_of_azkaban)
+book4 <- data_frame(Title="Harry Potter and the Goblet of Fire", text=goblet_of_fire)
+book5 <- data_frame(Title="Harry Potter and the Order of the Phoenix", text=order_of_the_phoenix)
+book6 <- data_frame(Title="Harry Potter and the Half-blood Prince", text=half_blood_prince)
+book7 <- data_frame(Title="Harry Potter and the Deathly Hallows", text=deathly_hallows)
+
+# Join BookMetadata and HarryPotter dfs by "Title"
+harrypotterSeries <- rbind(book1,book2, book3, book4, book5, book6, book7) %>% inner_join(bookMetadata, by = "Title")%>%
+  group_by(Title) %>%
+  mutate(Chapter = row_number())%>% # add chapter
   ungroup()
 
-original_books
+head(harrypotterSeries)
 ```
-restructure it in the one-token-per-row format, 
+
+## Cleaning Data
+1. Restructure it in the one-token-per-row format, 
 
 ```{r}
-tidy_books <- original_books %>%
+harrypotter_tokenized <- harrypotterSeries %>%
   unnest_tokens(word, text)
 
-tidy_books
+harrypotter_tokenized %>%
+  select(Title, Chapter, word) %>%
+  head()
+
 ```
 
-remove stop words; stop words are words that are not useful for an analysis, typically extremely common words such as "the", "of", "to",
+2. Remove stop words; stop words are words that are not useful for an analysis, typically extremely common words such as "the", "of", "to",
 
 ```{r}
-data(stop_words)
-
-tidy_books <- tidy_books %>%
-  anti_join(stop_words)
+harrypotter_clean_tokens <- harrypotter_tokenized %>% 
+   anti_join(stop_words)  #remove stop words like "the"
 ```
 
-find the most common words in all the books as a whole.
+## Perfrom Analysis by answereing the following questions
+1. what is the most important charecter based on how much is whas mentioned 
+2. what is the most scariest book based on sentiment analysis ?
+
 ```{r}
-tidy_books %>%
-  count(word, sort = TRUE) 
+harrypotter_clean_tokens%>%
+  inner_join(get_sentiments("bing"), by = "word") %>% # join sentiment
+  group_by(Title)%>% # make each row  abook
+  count(sentiment, sort = TRUE)%>% # count sentiment
+  filter(sentiment=="negative")  #filter by negative sentiment
+
+# Using bing lexicon, Harry Potter and the Order of the Phoenix is the scariest with about 8k negative sentiments
+
 ```
 
-create a visualization of the most common words 
+
+
+
+3. What the top ten used words in exception to stop words ?
 ```{r}
-# plot using ggplot
-word_count <- tidy_books %>%
-  count(word, sort = TRUE) %>%
-  filter(n > 600) %>%
-  mutate(word = reorder(word, n))
+word_count <- harrypotter_clean_tokens %>% 
+  count(word, sort = TRUE) %>% 
+   mutate(word = reorder(word, n))
+head(word_count)
+```
+
+ 
+```{r}
+# Visualization of the most common words
+word_count_gt_600 <- word_count %>%
+  filter(n > 600)
 
 
 
 # plot using word cloud
  
-  wordcloud(words = word_count$word, freq = word_count$n, min.freq = 1,
+  wordcloud(words = word_count_gt_600$word, freq = word_count_gt_600$n, min.freq = 1,
           random.order=FALSE, rot.per=0.35, 
           colors=brewer.pal(8, "Dark2"))
 
