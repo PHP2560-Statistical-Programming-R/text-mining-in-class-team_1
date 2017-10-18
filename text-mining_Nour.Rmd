@@ -2,11 +2,18 @@
 title: "Text Analyis"
 output: github_document
 ---
-
+questions for analysis: 
+1. what is the most important charecter based on how much is whas mentioned ? 
+2. what is the most scariest book based on sentiment analysis ?
+3. what the top ten used words in exception to stop words ?
+4. sentiments by books 
+5. sentiment by popularity based on "https://www.theguardian.com/news/datablog/2012/aug/09/best-selling-books-all-time-fifty-shades-grey-compare" "
+and the sixth question is unique for every student 
 
 
 
 # Your mission
+
 
 Perform text analysis.
 
@@ -22,10 +29,11 @@ Do the above. Can't think of a data source?
 - `AssociatedPress` from the `topicmodels` package
 - `NYTimes` or `USCongress` from the `RTextTools` package
 - Harry Potter Complete 7 Books text
-    ```
+```{r} 
+
     if (packageVersion("devtools") < 1.6) {
-  install.packages("devtools")
-}
+  install.packages("devtools")}
+
 
 devtools::install_github("bradleyboehmke/harrypotter")
     ```
@@ -44,4 +52,62 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 - Ask questions about the data
 - Answer these questions with the data using tables and graphics
 - Each group member must have their own unique question that they code the answer for. 
+```{r}
+library(dplyr)
+library(stringi)
+library(harrypotter)
+library(tidytext)
+```
 
+```{r}
+# tidying the text of the first book: 
+  chamber_of_secrets_tidy <- data_frame( text = chamber_of_secrets, Book = "chamber_of_secrets") %>%
+    unnest_tokens(word, text) 
+
+# tidy the second book 
+deathly_hallows_tidy <- data_frame(text = deathly_hallows , Book = "deathly_hallows" ) %>%
+unnest_tokens(word, text) 
+
+# the Third book
+goblet_of_fire_tidy <- data_frame(text = goblet_of_fire, Book = "goblet_of_fire")%>%
+unnest_tokens(word, text)
+
+# the fourth book
+
+half_blood_prince_tidy <- data_frame(text = half_blood_prince, Book = "half_blood_prince") %>%
+  unnest_tokens(word, text)
+
+# the fifth book 
+order_of_the_phoenix_tidy <- data_frame(text = order_of_the_phoenix, Book = "order_of_the_phoenix") %>%
+ unnest_tokens(word, text)
+ 
+ # the sixth book 
+philosophers_stone_tidy <- data_frame(text = philosophers_stone, Book = "philosophers_stone" ) %>%
+unnest_tokens(word, text)
+
+# the seventh book
+prisoner_of_azkaban_tidy <- data_frame(text = prisoner_of_azkaban, Book = "prisoner_of_azkaban") %>%
+unnest_tokens(word, text)
+```
+
+```{r}
+# making one dataframe for all books 
+harrypoter <- rbind(chamber_of_secrets_tidy, deathly_hallows_tidy, goblet_of_fire_tidy, half_blood_prince_tidy, order_of_the_phoenix_tidy, philosophers_stone_tidy, prisoner_of_azkaban_tidy)
+
+# what is the most mentioned Character
+harrypoter %>%
+  count(word, sort = TRUE)
+```
+
+```{r}
+library(rebus)
+# list of characters 
+# after making a txt file from "https://en.wikipedia.org/wiki/List_of_Harry_Potter_characters" then importing to R 
+ charachters_raw <- readLines("characters_ weki.txt")
+```
+```{r}
+# defining characters pattern 
+# characterpattern =  START  %R% one_or_more(WRD) %R% \xd0
+str_extract(charachters_raw, pattern = "\\*[[:print:]]+\\*")   
+str_split(characters_raw,  pattern="[[:punc:]]")  
+```
