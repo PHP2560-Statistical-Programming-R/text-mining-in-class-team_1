@@ -74,7 +74,7 @@ library(ggplot2)
 library(wordcloud)
 library(RColorBrewer)
 library(harrypotter)
-
+library(tidyr)
 ```
 
 ## Merging data from different sources
@@ -123,7 +123,7 @@ harrypotter_clean_tokens <- harrypotter_tokenized %>%
    anti_join(stop_words)  #remove stop words like "the"
 ```
 
-## Perfrom Analysis by answereing the following questions
+## Quantitative and Sentimental Analysis
 1. what is the most important charecter based on how much is whas mentioned 
 2. what is the most scariest book based on sentiment analysis ?
 
@@ -138,9 +138,6 @@ harrypotter_clean_tokens%>%
 
 ```
 
-
-
-
 3. What the top ten used words in exception to stop words ?
 ```{r}
 word_count <- harrypotter_clean_tokens %>% 
@@ -148,7 +145,6 @@ word_count <- harrypotter_clean_tokens %>%
    mutate(word = reorder(word, n))
 head(word_count)
 ```
-
  
 ```{r}
 # Visualization of the most common words
@@ -165,8 +161,20 @@ word_count_gt_600 <- word_count %>%
 
 ```
 
-***Sentimental Analysis
+## More Sentimental & Quantitative Analysis
+
+1. 
 ```{r}
 
+
+hp_df<- harrypotter_clean_tokens%>%
+  inner_join(get_sentiments("bing"), by = "word") %>% # join sentiment
+  count(Title, index = Chapter %/% 80, sentiment, sort = TRUE)%>% # count sentiment
+   spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+  ggplot(hp_df, aes(index, sentiment, fill = book)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~book, ncol = 2, scales = "free_x")
 ```
 
