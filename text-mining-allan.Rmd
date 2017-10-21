@@ -44,6 +44,8 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 - Ask questions about the data
 - Answer these questions with the data using tables and graphics
 - Each group member must have their own unique question that they code the answer for. 
+
+## Package installation
 ```{r, message=FALSE, warning=FALSE, eval=FALSE}
 #install.packages("janeaustenr")  # for book by janeaustenr
 #install.packages("gutenbergr")  # for free ebooks
@@ -54,10 +56,17 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 #install.packages("ggplot2")  # for text stemming
 #install.packages("wordcloud") # word-cloud generator 
 #install.packages("RColorBrewer") # color palettes
+#install.packages("ggrepel") # ggrepel
+#install.packages("igraph") # ggrepel
+#install.packages("ggraph") # ggrepel
 
+if (packageVersion("devtools") < 1.6) {
+  install.packages("devtools")
+}
+devtools::install_github("bradleyboehmke/harrypotter")
 ```
 
-
+## Loading required packages
 ```{r message=FALSE, warning=FALSE}
 library(janeaustenr)
 library(gutenbergr)
@@ -67,67 +76,262 @@ library(tidytext)
 library(ggplot2)
 library(wordcloud)
 library(RColorBrewer)
-
+library(harrypotter)
+library(tidyr)
+library(ggrepel)
+library(RColorBrewer)
 
 ```
+## Reusable functions
+```{r}
+# this function returns ggplot theme definition ~ this will prevent code duplication
+uniform_ggplot_theme <- function(base_size = 12, base_family = "sans"){
+  theme_grey(base_size = base_size, base_family = base_family) +
+  theme(
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    axis.title = element_text(size = 14),
+    panel.grid.major = element_line(color = "grey"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "aliceblue"),
+    strip.background = element_rect(fill = "lightgrey", color = "grey", size = 1),
+    strip.text = element_text(face = "bold", size = 12, color = "navy"),
+    legend.position = "bottom",
+    legend.background = element_blank(),
+    panel.margin = unit(.5, "lines"),
+    panel.border = element_rect(color = "grey", fill = NA, size = 0.5)
+  )
+}
+```
+
+## Merging data from different sources
 Let’s start with that, and also use mutate() to annotate a linenumber quantity to keep track of lines in the original format and a chapter (using a regex) to find where all the chapters are.
 ```{r}
-#cleaning data
-# Convert the text to lower case
-# Remove english common stopwords eg the, for, e.t.c
-original_books <- austen_books() %>%
-  group_by(book) %>%
-  mutate(linenumber = row_number(),
-         chapter = cumsum(str_detect(text, regex("^chapter [\\divxlc]",
-                                                 ignore_case = TRUE)))) %>%
-  ungroup()
 
-original_books
-```
-restructure it in the one-token-per-row format, 
+# Fetch Book metadata from theGuardian.com e.g publisher, ranking, sales, author e.t.c 
+bookMetadata <- read.csv("https://docs.google.com/spreadsheets/d/1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA/export?format=csv&id=1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA&gid=0")
 
-```{r}
-tidy_books <- original_books %>%
-  unnest_tokens(word, text)
+# Combine all The Harry Potter books into 1 dataframe and add column which will be used a reference "Title"
 
-tidy_books
-```
+book1 <- data_frame(Title="Harry Potter and the Philosopher's Stone", text=philosophers_stone)
+book2 <- data_frame(Title="Harry Potter and the Chamber of Secrets", text=chamber_of_secrets)
+book3 <- data_frame(Title="Harry Potter and the Prisoner of Azkaban", text=prisoner_of_azkaban)
+book4 <- data_frame(Title="Harry Potter and the Goblet of Fire", text=goblet_of_fire)
+book5 <- data_frame(Title="Harry Potter and the Order of the Phoenix", text=order_of_the_phoenix)
+book6 <- data_frame(Title="Harry Potter and the Half-blood Prince", text=half_blood_prince)
+book7 <- data_frame(Title="Harry Potter and the Deathly Hallows", text=deathly_hallows)
 
-remove stop words; stop words are words that are not useful for an analysis, typically extremely common words such as "the", "of", "to",
+# Join BookMetadata and HarryPotter dfs by "Title"
+harrypotter_and_metadata <- rbind(book1,book2, book3, book4, book5, book6, book7) %>% inner_join(bookMetadata, by = "Title")%>%
+  group_by(Title) %>%
+  mutate(Chapter = row_number())%>% # add chapter
+     ungroup()
 
-```{r}
-data(stop_words)
+  harrypotterSeries <- harrypotter_and_metadata %>%
+ unnest_tokens(sentence, text, token = "sentences") %>%
+  mutate(line = row_number()) # add sentences
 
-tidy_books <- tidy_books %>%
-  anti_join(stop_words)
+head(harrypotterSeries)
 ```
 
-find the most common words in all the books as a whole.
+## Cleaning Data
+1. Restructure it in the one-token-per-row format, 
+
 ```{r}
-tidy_books %>%
-  count(word, sort = TRUE) 
+harrypotter_tokenized <- harrypotterSeries %>%
+  unnest_tokens(word, sentence)
+
+harrypotter_tokenized %>%
+  select(Title, Chapter, word) %>%
+  head()
+
 ```
 
-create a visualization of the most common words 
+2. Remove stop words; stop words are words that are not useful for an analysis, typically extremely common words such as "the", "of", "to",
+
 ```{r}
-# plot using ggplot
-word_count <- tidy_books %>%
-  count(word, sort = TRUE) %>%
-  filter(n > 600) %>%
-  mutate(word = reorder(word, n))
+harrypotter_clean_tokens <- harrypotter_tokenized %>% 
+   anti_join(stop_words)  #remove stop words like "the"
+```
+
+## Quantitative and Sentimental Analysis
+1. what is the most important charecter based on how much is whas mentioned 
+2. what is the most scariest book based on sentiment analysis ?
+
+```{r}
+harrypotter_clean_tokens%>%
+  inner_join(get_sentiments("bing"), by = "word") %>% # join sentiment
+  group_by(Title)%>% # make each row  abook
+  count(sentiment, sort = TRUE)%>% # count sentiment
+  filter(sentiment=="negative")  #filter by negative sentiment
+
+# Using bing lexicon, Harry Potter and the Order of the Phoenix is the scariest with about 8k negative sentiments
+
+```
+
+3. What the top ten used words in exception to stop words ?
+```{r}
+word_count <- harrypotter_clean_tokens %>% 
+  count(word, sort = TRUE) %>% 
+   mutate(word = reorder(word, n))
+head(word_count)
+```
+ 
+```{r}
+# Visualization of the most common words
+word_count_gt_600 <- word_count %>%
+  filter(n > 600)
 
 
 
 # plot using word cloud
  
-  wordcloud(words = word_count$word, freq = word_count$n, min.freq = 1,
+  wordcloud(words = word_count_gt_600$word, freq = word_count_gt_600$n, min.freq = 1,
           random.order=FALSE, rot.per=0.35, 
           colors=brewer.pal(8, "Dark2"))
+ 
+```
+
+## More Sentimental & Quantitative Analysis
+
+1. Which is the most common word pairs (ngrams) in harry potter series 
+```{r}
+harrypotterSeries_ngrams <- harrypotterSeries %>%
+  unnest_tokens(bigram, sentence, token = "ngrams", n = 2) %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+bigram_counts <- harrypotterSeries_ngrams %>%
+  count(word1, word2, sort = TRUE)
+
+head(bigram_counts)
+
+bigram_counts%>%
+  filter(n > 80)%>%
+  ggplot(aes(x = reorder(word1, -n), y = reorder(word2, -n), fill = n)) +
+    geom_tile(alpha = 0.8, color = "white") +
+    coord_flip() +
+    theme(legend.position = "right") +
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+    labs(x = "first word in pair",
+         y = "second word in pair")
+
+```
+1.What is the frequency distribution of words for each Harry Potter Book
+```{r}
+ book_words <- harrypotter_clean_tokens %>%
+  count(Title, word, sort = TRUE) %>%
+  ungroup()
+
+total_words <- book_words %>% 
+  group_by(Title) %>% 
+  summarize(total = sum(n))
+
+book_words <- left_join(book_words, total_words)
+
+head(book_words)
+ggplot(book_words, aes(n/total, fill = Title)) +
+  geom_histogram(show.legend = FALSE) +
+  xlim(NA, 0.0009) +
+  facet_wrap(~Title, ncol = 2, scales = "free_y")
+
+# These plots exhibit similar distributions for all the books, with most of the words occuring rarely and fewer words that occur frequently.
+```
+3. Does Zipf’s law holds for Harry Potter series? 
+```{r}
+freq_by_rank <- book_words %>% 
+  group_by(Title) %>% 
+  mutate(rank = row_number(), 
+         `term frequency` = n/total)
+
+head(freq_by_rank)
+freq_by_rank %>% 
+  ggplot(aes(rank, `term frequency`, color = Title)) + 
+  geom_line(size = 1.2, alpha = 0.8) + 
+  scale_x_log10() +
+  scale_y_log10()
+
+# We see that all 7 novels are similar to each other, and that the relationship between rank and frequency does have negative slope. 
+
+```
+3. Does  *power law*  holds in Harry Potter series? 
+```{r}
+rank_subset <- freq_by_rank %>% 
+  filter(rank < 500,
+         rank > 10)
+
+lm(log10(`term frequency`) ~ log10(rank), data = rank_subset)
+
+freq_by_rank %>% 
+  ggplot(aes(rank, `term frequency`, color = Title)) + 
+  geom_abline(intercept = -0.62, slope = -1.1, color = "gray50", linetype = 2) +
+  geom_line(size = 1.2, alpha = 0.8) + 
+  scale_x_log10() +
+  scale_y_log10()
+# we can see that we have deviations at higher ranks.This is unusual, because the author uses  a lower percentage of the most common words
+```
+
+1. How does positive sentiment change over time?
+```{r}
+#Before I go ahead with the sentiment analysis I want to get an idea of the kind of words association with the NRC categories.
+
+harrypotter_sentiment <- harrypotter_clean_tokens%>%
+  inner_join(get_sentiments("nrc"), by = "word") %>%
+  inner_join(get_sentiments("afinn"), by = "word") %>%
+  group_by(Title, Chapter,sentiment)%>%
+  summarise(count=sum(score))
+  
+
+harrypotter_sentiment%>%
+  filter(count>0)%>%
+  ggplot( aes(x = Chapter, y = count)) + 
+  geom_line(size = 1, color = brewer.pal(3, "Set1")[3]) +
+  facet_grid(sentiment~.) +
+  uniform_ggplot_theme() + 
+  theme(
+    axis.text.x = element_text(angle = 0, vjust = 0, hjust = 0),
+    legend.position = "none") +
+  labs(x = "Chapter", y = "Sentiment Value",
+       title = "Sentiments Progression (Positive sentiments)")
 
 ```
 
-***Sentimental Analysis
+2. How does negative sentiments changes over time
 ```{r}
 
+harrypotter_sentiment%>%
+  filter(count<0)%>%
+  ggplot( aes(x = Chapter, y = count)) + 
+  geom_line(size = 1, color = brewer.pal(3, "Set1")[1]) +
+  facet_grid(sentiment~.) +
+  uniform_ggplot_theme() + 
+  theme(
+    axis.text.x = element_text(angle = 0, vjust = 0, hjust = 0),
+    legend.position = "none") +
+  labs(x = "Chapter", y = "Sentiment Value",
+       title = "Sentiments Progression (Negative sentiments)")
+```
+
+
+3. How does sentiment changes over time for each book? Which book has the highest variation?
+```{r}
+
+
+hp_df<- harrypotter_clean_tokens%>%
+  inner_join(get_sentiments("bing"), by = "word") %>% # join sentiment
+  count(Title, Chapter, sentiment, sort = TRUE)%>% # count sentiment
+   spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+  ggplot(hp_df, aes(Chapter, sentiment, fill = Title))+
+   geom_line(size = 1, color = brewer.pal(3, "Set1")[3]) +
+  facet_wrap(~Title, ncol = 2, scales = "free_x")
+  
+  ggplot(hp_df, aes(Chapter, sentiment, colour = Title))+
+   geom_line()+
+    theme(
+    legend.position ="bottom")
+  # looks like Harry Potter and the Deathly Hallows has the highest sentimental variation
 ```
 
