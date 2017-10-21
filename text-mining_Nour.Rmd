@@ -134,8 +134,8 @@ rownames(characters_list) <- seq(length=nrow(characters_list))
  
  harrypoterclean %>%
 inner_join( characters_listjoin, by = "word" ) %>%
-  
-
+count( word, sort= TRUE)  
+# not that joining and counting was done using first name only wich is not accurate. due to inability to use full name because  full names not always mentiond. also family name cannot be used becaue it is shared between many characters. 
 ```
 
 ```{r}
