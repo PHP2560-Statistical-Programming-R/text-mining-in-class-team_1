@@ -126,13 +126,15 @@ rownames(characters_list) <- seq(length=nrow(characters_list))
  mutate_if(is.factor, as.character) -> characters_listjoin
    
   characters_listjoin$word <- str_replace_all(characters_listjoin$word , pattern = one_or_more(WRD), replacement = tolower)
+  
 ```
 
 ```{r}
 # Q1 what is the most important charecter based on how much is whas mentioned ? 
  
  harrypoterclean %>%
-inner_join( characters_listjoin, by= "word") 
+inner_join( characters_listjoin, by = "word" ) %>%
+  
 
 ```
 
