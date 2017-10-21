@@ -124,13 +124,33 @@ rownames(characters_list) <- seq(length=nrow(characters_list))
  characters_list %>%
   mutate(word = first) %>%
  mutate_if(is.factor, as.character) -> characters_listjoin
-  
+   
+  characters_listjoin$word <- str_replace_all(characters_listjoin$word , pattern = one_or_more(WRD), replacement = tolower)
 ```
 
 ```{r}
 # Q1 what is the most important charecter based on how much is whas mentioned ? 
  
- harrypoter %>%
+ harrypoterclean %>%
 inner_join( characters_listjoin, by= "word") 
 
+```
+
+```{r}
+harrypoterclean %>%
+  # joining with sentiment "bing"
+  inner_join(get_sentiments("bing")) %>%
+  group_by(Book) %>%
+  count( Book, sentiment , sort = TRUE) %>%
+  # filtering only negative sentiments
+  filter(sentiment == "negative")
+  # the most negative book is order_of_the_phoenix with 8774 negative word. 
+```
+
+```{r}
+harrypoterclean %>%
+  group_by(word) %>%
+  count( word, sort = TRUE) %>%
+arrange(desc(n))
+# So the most imporatnt word by frequency of use is harry 
 ```
