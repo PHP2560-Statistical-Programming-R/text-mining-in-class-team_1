@@ -63,35 +63,43 @@ library(rebus)
 ```{r}
 # tidying the text of the first book: 
   chamber_of_secrets_tidy <- data_frame( text = chamber_of_secrets, Book = "chamber_of_secrets") %>%
-    unnest_tokens(word, text) 
+    unnest_tokens(sentence, text, token = "sentences") %>%
+  mutate(line = row_number())
 # tidy the second book 
 deathly_hallows_tidy <- data_frame(text = deathly_hallows , Book = "deathly_hallows" ) %>%
-unnest_tokens(word, text) 
+unnest_tokens(sentence, text, token = "sentences") %>%
+  mutate(line = row_number())
 # the Third book
 goblet_of_fire_tidy <- data_frame(text = goblet_of_fire, Book = "goblet_of_fire")%>%
-unnest_tokens(word, text)
+unnest_tokens(sentence, text, token = "sentences") %>%
+  mutate(line = row_number())
 # the fourth book
 half_blood_prince_tidy <- data_frame(text = half_blood_prince, Book = "half_blood_prince") %>%
-  unnest_tokens(word, text)
+  unnest_tokens(sentence, text, token = "sentences") %>%
+  mutate(line = row_number())
 # the fifth book 
 order_of_the_phoenix_tidy <- data_frame(text = order_of_the_phoenix, Book = "order_of_the_phoenix") %>%
- unnest_tokens(word, text)
+ unnest_tokens(sentence, text, token = "sentences") %>%
+  mutate(line = row_number())
  # the sixth book 
 philosophers_stone_tidy <- data_frame(text = philosophers_stone, Book = "philosophers_stone" ) %>%
-unnest_tokens(word, text)
+unnest_tokens(sentence, text, token = "sentences") %>%
+  mutate(line = row_number())
 # the seventh book
 prisoner_of_azkaban_tidy <- data_frame(text = prisoner_of_azkaban, Book = "prisoner_of_azkaban") %>%
-unnest_tokens(word, text)
+unnest_tokens(sentence, text, token = "sentences") %>%
+  mutate(line = row_number())
 ```
 
 ```{r}
 # making one dataframe for all books 
 harrypoter <- rbind(chamber_of_secrets_tidy, deathly_hallows_tidy, goblet_of_fire_tidy, half_blood_prince_tidy, order_of_the_phoenix_tidy, philosophers_stone_tidy, prisoner_of_azkaban_tidy) 
-head(harrypoter)
+harrypoter
 ```
 ```{r}
 #remove stop words that are unncessary for analysis like a, an , as ... etc. 
 harrypoterclean <- harrypoter %>%
+  unnest_tokens(word, sentence) %>%
   anti_join(stop_words)
 
 ```
@@ -129,15 +137,15 @@ rownames(characters_list) <- seq(length=nrow(characters_list))
   
 ```
 
+Q1 what is the most important charecter based on how much is whas mentioned ? 
 ```{r}
-# Q1 what is the most important charecter based on how much is whas mentioned ? 
  
  harrypoterclean %>%
 inner_join( characters_listjoin, by = "word" ) %>%
-count( word, sort= TRUE)  
+count(Book, word,sort= TRUE)  
 # not that joining and counting was done using first name only wich is not accurate. due to inability to use full name because  full names not always mentiond. also family name cannot be used becaue it is shared between many characters. 
 ```
-
+Q2 what is the most scariest book based on sentiment analysis ?
 ```{r}
 harrypoterclean %>%
   # joining with sentiment "bing"
