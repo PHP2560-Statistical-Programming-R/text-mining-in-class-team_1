@@ -59,6 +59,7 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 #install.packages("ggrepel") # ggrepel
 #install.packages("igraph") # ggrepel
 #install.packages("ggraph") # ggrepel
+#
 
 if (packageVersion("devtools") < 1.6) {
   install.packages("devtools")
