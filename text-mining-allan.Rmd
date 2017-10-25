@@ -59,7 +59,8 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 #install.packages("ggrepel") # ggrepel
 #install.packages("igraph") # ggrepel
 #install.packages("ggraph") # ggrepel
-#
+#install.packages("XML") # for web scraping
+#install.packages("rebus") # for regex
 
 if (packageVersion("devtools") < 1.6) {
   install.packages("devtools")
@@ -83,6 +84,7 @@ library(ggrepel)
 library(RColorBrewer)
 library(igraph)
 library(ggraph)
+library(rebus)
 
 
 ```
@@ -114,6 +116,26 @@ Let’s start with that, and also use mutate() to annotate a linenumber quantity
 
 # Fetch Book metadata from theGuardian.com e.g publisher, ranking, sales, author e.t.c 
 bookMetadata <- read.csv("https://docs.google.com/spreadsheets/d/1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA/export?format=csv&id=1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA&gid=0")
+
+#web scrape main characters of Harry Potter Series from
+library(XML)
+library(RCurl)
+# download harry potter wikipedia page
+ hp_wikipedia_site = readLines('https://en.wikipedia.org/wiki/List_of_Harry_Potter_characters')
+ #define custom stop word used in data cleaning
+ custom_stop_words <-  c('Wikipedia','Wikimedia','The','')
+# read entire hp_wikipedia_site
+ hp_characters <- str_match( hp_wikipedia_site, capture (UPPER %R% one_or_more(WRD)) %R% SPC %R% capture(UPPER %R% one_or_more(WRD))) %>%
+   as.data.frame() %>% # convert to data frame for easy manipulation
+   na.exclude()%>% # remove missing data
+   setNames(c( "FullName", "FirstName", "LastName")) %>% # set column names
+   arrange(FullName) %>% # arrange
+   filter(!FirstName%in%custom_stop_words) %>% # clean data by first name
+   filter(!LastName%in%custom_stop_words) %>% # clean data by last name 
+   unique() 
+  
+
+
 
 # Combine all The Harry Potter books into 1 dataframe and add column which will be used a reference "Title"
 
@@ -163,12 +185,22 @@ harrypotter_clean_tokens <- harrypotter_tokenized %>%
 2. what is the most scariest book based on sentiment analysis ?
 
 ```{r}
-harrypotter_clean_tokens%>%
+hp_negative_sentiment<-harrypotter_clean_tokens%>%
   inner_join(get_sentiments("bing"), by = "word") %>% # join sentiment
   group_by(Title)%>% # make each row  abook
   count(sentiment, sort = TRUE)%>% # count sentiment
-  filter(sentiment=="negative")  #filter by negative sentiment
-
+  filter(sentiment=="negative")%>%  #filter by negative sentiment
+  mutate(Position = rank(n))
+  
+head(hp_negative_sentiment)
+#plot the graph of harrypotter_clean_tokens
+hp_negative_sentiment %>% 
+  ggplot(aes(Title,n, fill=Title)) +
+  geom_bar(stat="identity")+
+  labs(x = NULL, y = "n") +
+  theme(legend.position="none") +
+  scale_x_discrete(limits = n) +
+  coord_flip()
 # Using bing lexicon, Harry Potter and the Order of the Phoenix is the scariest with about 8k negative sentiments
 
 ```
