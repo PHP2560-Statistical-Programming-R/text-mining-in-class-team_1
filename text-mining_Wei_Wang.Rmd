@@ -48,6 +48,17 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 - Each group member must have their own unique question that they code the answer for. 
 
 
+# Group Question Sets
+```{r}
+## Questions for analysis: 
+## 1. what is the most important charecter based on how much is whas mentioned ? 
+## 2. what is the most scariest book based on sentiment analysis ?
+## 3. what the top ten used words in exception to stop words ?
+## 4. sentiments by books 
+## 5. sentiment by popularity based on "https://www.theguardian.com/news/datablog/2012/aug/09/best-selling-books-all-time-fifty-shades-grey-compare" 
+# And the sixth question is unique for every student.
+```
+
 # Setup
 
 ```{r, message=FALSE, warning=FALSE}
@@ -100,15 +111,10 @@ hp_list <- list(harrypotter::philosophers_stone,
 ```
 
 ## 1.2 Place all of the books in the Harry Potter series into a tibble. Then tokenize the text into single words, strip away all punctuation and capitalization, and add columns to the tibble for the book and chapter.
-<<<<<<< HEAD
 ```{r, echo=TRUE}
-=======
-```{r}
->>>>>>> b9e4213fe7702320f08e6f81d7b1234caa226c28
 ##Each book is an array in which each value in the array is a chapter 
 series <- tibble()
 for(i in seq_along(hp_books)) {
-  
   temp <- tibble(book = seq_along(hp_list[[i]]),
                   text = hp_list[[i]]) %>%
     unnest_tokens(word, text) %>%
@@ -133,7 +139,17 @@ used_words <- series %>%
   count(word, sort = TRUE)
 used_words
 ```
-## 2.1 Plot word frequency per book.
+
+## 2.1 Wordcloud
+```{r}
+series %>%
+  group_by(word) %>%
+  count() %>% # summarize count per word
+  mutate(log_n = sqrt(n)) %>% # take root to decrease outlier impact
+  with(wordcloud(word, log_n, max.words = 100))
+```
+## 2.2 Plot word frequency per book.
+
 ```{r}
 # PLOT WORD FREQUENCY PER BOOK
 series %>%
@@ -163,9 +179,8 @@ series %>%
 ```
 
 
-## 2.2 Find tf-idf.
+## 2.3 Find tf-idf.
 ```{r}
-# Start from here!!!
 
 
 
@@ -173,8 +188,12 @@ series %>%
 ```
 
 
-## 2.3 Topic Modeling.
+## 2.4 Topic Modeling.
+```{r}
 
+
+
+```
 
 
 
@@ -183,16 +202,67 @@ series %>%
 # 3. Sentiment analysis
 
 ## 3.1 Sentiment analysis by word.
+```{r}
+# Identify all words that occur both in the books and the dictionaries and combines them into a long dataframe.
+hp_sentiment <- bind_rows(
+# 1 AFINN 
+  series %>% 
+    inner_join(get_sentiments("afinn"), by = "word") %>%
+    filter(score != 0) %>% # delete neutral words
+    mutate(sentiment = ifelse(score < 0, 'negative', 'positive')) %>% # identify sentiment
+    mutate(score = sqrt(score ^ 2)) %>% # all scores to positive
+    group_by(book,  sentiment) %>% 
+    mutate(dictionary = 'afinn'), # create dictionary identifier
+# 2 BING 
+  series %>% 
+    inner_join(get_sentiments("bing"), by = "word") %>%
+    group_by(book, sentiment) %>%
+    mutate(dictionary = 'bing'), # create dictionary identifier
+# 3 NRC 
+  series %>% 
+    inner_join(get_sentiments("nrc"), by = "word") %>%
+    group_by(book, sentiment) %>%
+    mutate(dictionary = 'nrc') # create dictionary identifier
+)
 
-## 3.2 Sentiment analysis by message.
+# EXAMINE FIRST SENTIMENT WORDS
+hp_sentiment %>% head()
+```
+
+
+## 3.2 Sentiment development over the course of each book.
+```{r}
+series %>%
+        group_by(book) %>% 
+        mutate(word_count = 1:n(),
+               index = word_count %/% 500 + 1) %>% 
+        inner_join(get_sentiments("bing")) %>%
+        count(book, index = index , sentiment) %>%
+        ungroup() %>%
+        spread(sentiment, n, fill = 0) %>%
+        mutate(sentiment = positive - negative,
+               book = factor(book, levels = hp_books)) %>%
+        ggplot(aes(index, sentiment, fill = book)) +
+          geom_bar(alpha = 1, stat = "identity", show.legend = FALSE) +
+          facet_wrap(~ book, ncol = 2, scales = "free_x")
+```
+
+
+
 
 ## 3.3 N-gram analysis.
+```{r}
 
+
+```
 
 
 
 # 4. Summary
+```{r}
 
+
+```
 
 
 
