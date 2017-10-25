@@ -39,23 +39,151 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 - Ask questions about the data
 - Answer these questions with the data using tables and graphics
 - Each group member must have their own unique question that they code the answer for. 
+
+# Cleaning the data
+
+```{r}
+# Load packages necessary for the data analysis
+
+install.packages("dplyr")  # for data manipulation
+install.packages("stringr")  # for string manupulation
+install.packages("tidytext")  # for text mining
+install.packages("SnowballC") # for text stemming
+install.packages("ggplot2")  # for text stemming
+install.packages("wordcloud") # word-cloud generator 
+install.packages("RColorBrewer") # color palettes
+install.packages("ggrepel") # ggrepel
+install.packages("igraph") # ggrepel
+install.packages("ggraph") # ggrepellibrary(dplyr)
+```
+
 ```{r}
 library(dplyr)
-library(stringi)
-library(harrypotter)
+library(stringr)
 library(tidytext)
+library(ggplot2)
+library(RColorBrewer)
+library(harrypotter)
+library(tidyr)
+library(RColorBrewer)
+library(wordcloud)
 ```
-
-Questions for analysis: 
-1. what is the most important charecter based on how much is whas mentioned ? 
-2. what is the most scariest book based on sentiment analysis ?
-3. what the top ten used words in exception to stop words ?
-4. sentiments by books 
-5. sentiment by popularity based on "https://www.theguardian.com/news/datablog/2012/aug/09/best-selling-books-all-time-fifty-shades-grey-compare" "
-and the sixth question is unique for every student 
 
 ```{r}
-Book1 <- data_frame(text=harrypotter::philosophers_stone)
-Book1_tidy <- Book1 %>%
-  unnest_tokens(word,text)
+# Combine all The Harry Potter books into 1 dataframe and add column which will be used a reference "Title"
+book1 <- data_frame(Title="Harry Potter and the Philosopher's Stone", text=philosophers_stone)
+book2 <- data_frame(Title="Harry Potter and the Chamber of Secrets", text=chamber_of_secrets)
+book3 <- data_frame(Title="Harry Potter and the Prisoner of Azkaban", text=prisoner_of_azkaban)
+book4 <- data_frame(Title="Harry Potter and the Goblet of Fire", text=goblet_of_fire)
+book5 <- data_frame(Title="Harry Potter and the Order of the Phoenix", text=order_of_the_phoenix)
+book6 <- data_frame(Title="Harry Potter and the Half-blood Prince", text=half_blood_prince)
+book7 <- data_frame(Title="Harry Potter and the Deathly Hallows", text=deathly_hallows)
 ```
+
+```{r}
+# Fetch Book metadata from theGuardian.com e.g publisher, ranking, sales, author e.t.c 
+
+bookMetadata <- read.csv("https://docs.google.com/spreadsheets/d/1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA/export?format=csv&id=1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA&gid=0")
+
+# Join BookMetadata and HarryPotter dfs by "Title"
+harrypotter_and_metadata <- rbind(book1,book2, book3, book4, book5, book6, book7) %>% inner_join(bookMetadata, by = "Title")%>%
+  group_by(Title) %>%
+  mutate(Chapter = row_number())%>% # add chapter
+     ungroup()
+
+  harrypotterSeries <- harrypotter_and_metadata %>%
+ unnest_tokens(sentence, text, token = "sentences") %>%
+  mutate(line = row_number()) # add sentences
+
+head(harrypotterSeries)
+```
+
+```{r}
+#Restructure it in the one-token-per-row format
+harrypotter_tokenized <- harrypotterSeries %>%
+  unnest_tokens(word, sentence)
+
+harrypotter_tokenized %>%
+  select(Title, Chapter, word) %>%
+  head()
+```
+
+```{r}
+#Remove stop words
+harrypotter_clean_tokens <- harrypotter_tokenized %>% 
+   anti_join(stop_words)  
+```
+
+# Questions for analysis: 
+
+1. what is the most important charecter based on how much is whas mentioned ? 
+
+```{r}
+character_list<-c("harry","ron")
+harrypotter_clean_tokens %>%
+  filter(word==character_list[2]) %>%
+  count( word, sort = TRUE) %>%
+arrange(desc(n))
+```
+
+```{r}
+character_list<-c("harry","ron")
+for(i in 1:length(character_list)){
+word_freq[i]<-harrypotter_clean_tokens %>%
+  filter(word==character_list[i])
+}
+word_freq
+```
+
+2. what is the most scariest book based on sentiment analysis ?
+
+```{r}
+harrypotter_clean_tokens%>%
+  inner_join(get_sentiments("nrc"), by = "word") %>% # join sentiment
+  group_by(Title)%>% # make each row  abook
+  count(sentiment, sort = TRUE)%>% # count sentiment
+  filter(sentiment=="fear")  #filter by negative sentiment
+```
+
+3. what the top ten used words in exception to stop words ?
+
+```{r}
+word_count <- harrypotter_clean_tokens %>% 
+  count(word, sort = TRUE) %>% 
+   mutate(word = reorder(word, n))
+head(word_count)
+# Visualization of the most common words
+word_count_gt_600 <- word_count %>%
+  filter(n > 600)
+
+
+
+# plot using word cloud
+ 
+  wordcloud(words = word_count_gt_600$word, freq = word_count_gt_600$n, min.freq = 1,
+          random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+```
+
+4. sentiments by books 
+
+```{r}
+hp_df<- harrypotter_clean_tokens%>%
+  inner_join(get_sentiments("nrc"), by = "word") %>% # join sentiment
+  count(Title, Chapter, sentiment, sort = TRUE)%>% # count sentiment
+   spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+  ggplot(hp_df, aes(Chapter, sentiment, fill = Title))+
+   geom_line(size = 1, color = brewer.pal(3, "Set1")[3]) +
+  facet_wrap(~Title, ncol = 2, scales = "free_x")
+  
+  ggplot(hp_df, aes(Chapter, sentiment, colour = Title))+
+   geom_line()+
+    theme(
+    legend.position ="bottom")
+  # looks like Harry Potter and the Deathly Hallows has the highest sentimental variation
+```
+
+5. sentiment by popularity based on "https://www.theguardian.com/news/datablog/2012/aug/09/best-selling-books-all-time-fifty-shades-grey-compare"
+
