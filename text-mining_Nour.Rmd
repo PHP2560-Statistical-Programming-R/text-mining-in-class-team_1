@@ -226,3 +226,21 @@ harrypoterclean %>%
     geom_line(size = .1, show.legend = FALSE) +
     expand_limits(y = 0)
 ```
+
+most popular characters over time by book
+```{r}
+harrypoterclean %>%
+  inner_join(characters_listjoin) %>%
+   mutate( fiftylines=  floor(line / 50)) %>%
+   count(Book, fiftylines, word) %>% 
+  arrange(Book, fiftylines, word) %>%
+  group_by(Book,fiftylines) %>%
+  filter(word != "sir") %>%
+  filter(n == max(n)) %>%
+  ungroup()
+
+  
+  
+  
+
+```
