@@ -48,6 +48,17 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 - Each group member must have their own unique question that they code the answer for. 
 
 
+# Group Question Sets
+```{r}
+## Questions for analysis: 
+## 1. what is the most important charecter based on how much is whas mentioned ? 
+## 2. what is the most scariest book based on sentiment analysis ?
+## 3. what the top ten used words in exception to stop words ?
+## 4. sentiments by books 
+## 5. sentiment by popularity based on "https://www.theguardian.com/news/datablog/2012/aug/09/best-selling-books-all-time-fifty-shades-grey-compare" 
+# And the sixth question is unique for every student.
+```
+
 # Setup
 
 ```{r, message=FALSE, warning=FALSE}
