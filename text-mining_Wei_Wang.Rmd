@@ -178,7 +178,11 @@ series %>%
 
 
 ## 2.4 Topic Modeling.
+```{r}
 
+
+
+```
 
 
 
@@ -236,12 +240,18 @@ series %>%
 
 
 ## 3.3 N-gram analysis.
+```{r}
 
+
+```
 
 
 
 # 4. Summary
+```{r}
 
+
+```
 
 
 
