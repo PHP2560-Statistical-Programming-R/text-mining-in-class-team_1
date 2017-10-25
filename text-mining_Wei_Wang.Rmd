@@ -100,15 +100,10 @@ hp_list <- list(harrypotter::philosophers_stone,
 ```
 
 ## 1.2 Place all of the books in the Harry Potter series into a tibble. Then tokenize the text into single words, strip away all punctuation and capitalization, and add columns to the tibble for the book and chapter.
-<<<<<<< HEAD
 ```{r, echo=TRUE}
-=======
-```{r}
->>>>>>> b9e4213fe7702320f08e6f81d7b1234caa226c28
 ##Each book is an array in which each value in the array is a chapter 
 series <- tibble()
 for(i in seq_along(hp_books)) {
-  
   temp <- tibble(book = seq_along(hp_list[[i]]),
                   text = hp_list[[i]]) %>%
     unnest_tokens(word, text) %>%
@@ -181,6 +176,33 @@ series %>%
 
 
 # 3. Sentiment analysis
+```{r}
+# Identify all words that occur both in the books and the dictionaries and combines them into a long dataframe.
+
+hp_sentiment <- bind_rows(
+# 1 AFINN 
+  used_words %>% 
+    inner_join(get_sentiments("afinn"), by = "word") %>%
+    filter(score != 0) %>% # delete neutral words
+    mutate(sentiment = ifelse(score < 0, 'negative', 'positive')) %>% # identify sentiment
+    mutate(score = sqrt(score ^ 2)) %>% # all scores to positive
+    group_by(book, chapter, sentiment) %>% 
+    mutate(dictionary = 'afinn'), # create dictionary identifier
+# 2 BING 
+  used_words %>% 
+    inner_join(get_sentiments("bing"), by = "word") %>%
+    group_by(book, chapter, sentiment) %>%
+    mutate(dictionary = 'bing'), # create dictionary identifier
+# 3 NRC 
+  used_words %>% 
+    inner_join(get_sentiments("nrc"), by = "word") %>%
+    group_by(book, chapter, sentiment) %>%
+    mutate(dictionary = 'nrc') # create dictionary identifier
+)
+
+# EXAMINE FIRST SENTIMENT WORDS
+hp_senti %>% head()
+```
 
 ## 3.1 Sentiment analysis by word.
 
