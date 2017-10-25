@@ -212,7 +212,6 @@ hp_sentiment <- bind_rows(
 
 # EXAMINE FIRST SENTIMENT WORDS
 hp_sentiment %>% head()
-<<<<<<< HEAD
 ```
 
 
@@ -231,44 +230,12 @@ series %>%
         ggplot(aes(index, sentiment, fill = book)) +
           geom_bar(alpha = 1, stat = "identity", show.legend = FALSE) +
           facet_wrap(~ book, ncol = 2, scales = "free_x")
-
-
 ```
 
 
 
 
 ## 3.3 N-gram analysis.
-=======
-```
-
-```{r}
-series %>%
-        group_by(book) %>% 
-        mutate(word_count = 1:n(),
-               index = word_count %/% 500 + 1) %>% 
-        inner_join(get_sentiments("bing")) %>%
-        count(book, index = index , sentiment) %>%
-        ungroup() %>%
-        spread(sentiment, n, fill = 0) %>%
-        mutate(sentiment = positive - negative,
-               book = factor(book, levels = hp_books)) %>%
-        ggplot(aes(index, sentiment, fill = book)) +
-          geom_bar(alpha = 0.5, stat = "identity", show.legend = FALSE) +
-          facet_wrap(~ book, ncol = 2, scales = "free_x")
-
-
-```
-
-
-
-
-## 3.2 N-gram analysis.
->>>>>>> 4a712759752d67fd984a2f666331117967ab9c30
-```{r}
-
-
-```
 
 
 
