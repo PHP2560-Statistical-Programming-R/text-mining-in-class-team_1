@@ -128,7 +128,17 @@ used_words <- series %>%
   count(word, sort = TRUE)
 used_words
 ```
-## 2.1 Plot word frequency per book.
+
+## 2.1 Wordcloud
+```{r}
+series %>%
+  group_by(word) %>%
+  count() %>% # summarize count per word
+  mutate(log_n = sqrt(n)) %>% # take root to decrease outlier impact
+  with(wordcloud(word, log_n, max.words = 100))
+```
+## 2.2 Plot word frequency per book.
+
 ```{r}
 # PLOT WORD FREQUENCY PER BOOK
 series %>%
@@ -158,9 +168,8 @@ series %>%
 ```
 
 
-## 2.2 Find tf-idf.
+## 2.3 Find tf-idf.
 ```{r}
-# Start from here!!!
 
 
 
@@ -168,7 +177,7 @@ series %>%
 ```
 
 
-## 2.3 Topic Modeling.
+## 2.4 Topic Modeling.
 
 
 
@@ -176,39 +185,61 @@ series %>%
 
 
 # 3. Sentiment analysis
+
+## 3.1 Sentiment analysis by word.
 ```{r}
 # Identify all words that occur both in the books and the dictionaries and combines them into a long dataframe.
-
 hp_sentiment <- bind_rows(
 # 1 AFINN 
-  used_words %>% 
+  series %>% 
     inner_join(get_sentiments("afinn"), by = "word") %>%
     filter(score != 0) %>% # delete neutral words
     mutate(sentiment = ifelse(score < 0, 'negative', 'positive')) %>% # identify sentiment
     mutate(score = sqrt(score ^ 2)) %>% # all scores to positive
-    group_by(book, chapter, sentiment) %>% 
+    group_by(book,  sentiment) %>% 
     mutate(dictionary = 'afinn'), # create dictionary identifier
 # 2 BING 
-  used_words %>% 
+  series %>% 
     inner_join(get_sentiments("bing"), by = "word") %>%
-    group_by(book, chapter, sentiment) %>%
+    group_by(book, sentiment) %>%
     mutate(dictionary = 'bing'), # create dictionary identifier
 # 3 NRC 
-  used_words %>% 
+  series %>% 
     inner_join(get_sentiments("nrc"), by = "word") %>%
-    group_by(book, chapter, sentiment) %>%
+    group_by(book, sentiment) %>%
     mutate(dictionary = 'nrc') # create dictionary identifier
 )
 
 # EXAMINE FIRST SENTIMENT WORDS
-hp_senti %>% head()
+hp_sentiment %>% head()
 ```
 
-## 3.1 Sentiment analysis by word.
+```{r}
+series %>%
+        group_by(book) %>% 
+        mutate(word_count = 1:n(),
+               index = word_count %/% 500 + 1) %>% 
+        inner_join(get_sentiments("bing")) %>%
+        count(book, index = index , sentiment) %>%
+        ungroup() %>%
+        spread(sentiment, n, fill = 0) %>%
+        mutate(sentiment = positive - negative,
+               book = factor(book, levels = hp_books)) %>%
+        ggplot(aes(index, sentiment, fill = book)) +
+          geom_bar(alpha = 0.5, stat = "identity", show.legend = FALSE) +
+          facet_wrap(~ book, ncol = 2, scales = "free_x")
 
-## 3.2 Sentiment analysis by message.
 
-## 3.3 N-gram analysis.
+```
+
+
+
+
+## 3.2 N-gram analysis.
+```{r}
+
+
+```
 
 
 
