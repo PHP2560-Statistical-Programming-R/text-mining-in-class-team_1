@@ -189,8 +189,8 @@ hp_negative_sentiment<-harrypotter_clean_tokens%>%
   inner_join(get_sentiments("bing"), by = "word") %>% # join sentiment
   group_by(Title)%>% # make each row  abook
   count(sentiment, sort = TRUE)%>% # count sentiment
-  filter(sentiment=="negative")%>%  #filter by negative sentiment
-  mutate(Position = rank(n))
+  filter(sentiment=="negative")  #filter by negative sentiment
+ 
   
 head(hp_negative_sentiment)
 #plot the graph of harrypotter_clean_tokens
@@ -199,7 +199,6 @@ hp_negative_sentiment %>%
   geom_bar(stat="identity")+
   labs(x = NULL, y = "n") +
   theme(legend.position="none") +
-  scale_x_discrete(limits = n) +
   coord_flip()
 # Using bing lexicon, Harry Potter and the Order of the Phoenix is the scariest with about 8k negative sentiments
 
