@@ -55,6 +55,7 @@ install.packages("RColorBrewer") # color palettes
 install.packages("ggrepel") # ggrepel
 install.packages("igraph") # ggrepel
 install.packages("ggraph") # ggrepellibrary(dplyr)
+install.packages("rebus")
 ```
 
 ```{r}
@@ -67,6 +68,7 @@ library(harrypotter)
 library(tidyr)
 library(RColorBrewer)
 library(wordcloud)
+library(rebus)
 ```
 
 ```{r}
@@ -119,20 +121,33 @@ harrypotter_clean_tokens <- harrypotter_tokenized %>%
 1. what is the most important charecter based on how much is whas mentioned ? 
 
 ```{r}
-character_list<-c("harry","ron")
-harrypotter_clean_tokens %>%
-  filter(word==character_list[2]) %>%
-  count( word, sort = TRUE) %>%
-arrange(desc(n))
+install.packages("XML")
+install.packages("RCurl")
 ```
 
 ```{r}
-character_list<-c("harry","ron")
-for(i in 1:length(character_list)){
-word_freq[i]<-harrypotter_clean_tokens %>%
-  filter(word==character_list[i])
-}
-word_freq
+#web scrape main characters of Harry Potter Series from
+library(XML)
+library(RCurl)
+# download harry potter wikipedia page
+ hp_wikipedia_site = readLines('https://en.wikipedia.org/wiki/List_of_Harry_Potter_characters')
+ #define custom stop word used in data cleaning
+ custom_stop_words <-  c('Wikipedia','Wikimedia','The','Puppet','Hogwarts','Stories')
+# read entire hp_wikipedia_site
+ harrypotter_characters <- str_match( hp_wikipedia_site, capture (UPPER %R% one_or_more(WRD)) %R% SPC %R% capture(UPPER %R% one_or_more(WRD))) %>%
+   as.data.frame() %>% # convert to data frame for easy manipulation
+   na.exclude()%>% # remove missing data
+   setNames(c( "FullName", "FirstName", "LastName")) %>% # set column names
+   arrange(FullName) %>% # arrange
+   filter(!FirstName%in%custom_stop_words) %>% # clean data by first name
+   filter(!LastName%in%custom_stop_words) %>% # clean data by last name 
+   unique() 
+name_filter<-harrypotter_characters[,2]%>%as.data.frame()%>%setNames("word")
+```
+
+```{r}
+harrypotter_clean_tokens%>%
+filter(name_filter)
 ```
 
 2. what is the most scariest book based on sentiment analysis ?
