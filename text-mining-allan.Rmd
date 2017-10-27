@@ -61,6 +61,8 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 #install.packages("ggraph") # ggrepel
 #install.packages("XML") # for web scraping
 #install.packages("rebus") # for regex
+#install.packages("R.utils")
+#install.packages("topicmodels")
 
 if (packageVersion("devtools") < 1.6) {
   install.packages("devtools")
@@ -85,6 +87,7 @@ library(RColorBrewer)
 library(igraph)
 library(ggraph)
 library(rebus)
+library(topicmodels)
 
 
 ```
@@ -123,9 +126,9 @@ library(RCurl)
 # download harry potter wikipedia page
  hp_wikipedia_site = readLines('https://en.wikipedia.org/wiki/List_of_Harry_Potter_characters')
  #define custom stop word used in data cleaning
- custom_stop_words <-  c('Wikipedia','Wikimedia','The','')
+ custom_stop_words <-  c('Wikipedia','Wikimedia','The','Puppet','Hogwarts','Stories','Through')
 # read entire hp_wikipedia_site
- hp_characters <- str_match( hp_wikipedia_site, capture (UPPER %R% one_or_more(WRD)) %R% SPC %R% capture(UPPER %R% one_or_more(WRD))) %>%
+ harrypotter_characters <- str_match( hp_wikipedia_site, capture (UPPER %R% one_or_more(WRD)) %R% SPC %R% capture(UPPER %R% one_or_more(WRD))) %>%
    as.data.frame() %>% # convert to data frame for easy manipulation
    na.exclude()%>% # remove missing data
    setNames(c( "FullName", "FirstName", "LastName")) %>% # set column names
@@ -181,7 +184,15 @@ harrypotter_clean_tokens <- harrypotter_tokenized %>%
 ```
 
 ## Quantitative and Sentimental Analysis
-1. what is the most important charecter based on how much is whas mentioned 
+1. what is the most important charecter based on how much it was mentioned 
+```{r}
+
+ harrypotter_clean_tokens %>%
+  mutate(id = R.utils::capitalize(word)) %>%
+inner_join(harrypotter_characters, by =c(id = "FirstName") ) %>%
+count(FullName,sort= TRUE)  
+```
+
 2. what is the most scariest book based on sentiment analysis ?
 
 ```{r}
@@ -197,7 +208,7 @@ head(hp_negative_sentiment)
 hp_negative_sentiment %>% 
   ggplot(aes(Title,n, fill=Title)) +
   geom_bar(stat="identity")+
-  labs(x = NULL, y = "n") +
+  labs(x = NULL, y = "Level") +
   theme(legend.position="none") +
   coord_flip()
 # Using bing lexicon, Harry Potter and the Order of the Phoenix is the scariest with about 8k negative sentiments
@@ -424,4 +435,62 @@ hp_df<- harrypotter_clean_tokens%>%
     legend.position ="bottom")
   # looks like Harry Potter and the Deathly Hallows has the highest sentimental variation
 ```
+
+4. How frequently did  the top 8 most popular characters appear in the last Book
+```{r}
+ top_n_characters <- harrypotter_clean_tokens %>%
+  mutate(id = R.utils::capitalize(word)) %>%
+inner_join(harrypotter_characters, by =c(id = "FirstName") ) %>%
+count(FullName,word,sort= TRUE) %>%
+  top_n(9)
+
+
+harrypotter_clean_tokens %>%
+  filter(Title=='Harry Potter and the Deathly Hallows')%>%
+  mutate(id = R.utils::capitalize(word)) %>%
+  inner_join(harrypotter_characters, by = c(id = "FirstName")) %>%
+  count( Chapter, FullName,word, sort = TRUE) %>%
+  filter(word %in% as.vector(top_n_characters$word))%>%
+  ggplot(aes(Chapter, n)) +
+  geom_point() +
+  geom_smooth() +
+  facet_wrap(~ FullName, scales = "free_y") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  ylab("% frequency of Character")
+```
+7. What are the kind of main topics discussed in each of harry potter book
+
+```{r}
+# include only words and  not characters
+library(topicmodels)
+
+ hp_topic_model_df <- harrypotter_clean_tokens %>%
+  mutate(id = R.utils::capitalize(word)) %>%
+   # count token
+  anti_join(harrypotter_characters, by =c(id = "FirstName") ) %>% 
+  unite(document, Title, Chapter) %>%
+  count(document,word,sort= TRUE)  %>%
+ filter(n > 15)
+
+ chapters_dtm <- hp_topic_model_df %>%
+  cast_dtm(document, word, n)
+ 
+ chapters_lda <- LDA(chapters_dtm, k = 4, control = list(seed = 1234))
+
+chapter_topics <- tidy(chapters_lda, matrix = "beta")
+chapter_topics
+
+top_terms <- chapter_topics %>%
+  group_by(topic) %>%
+  top_n(5, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+
+top_terms %>%
+  mutate(term = reorder(term, beta)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip()
 
