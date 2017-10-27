@@ -238,9 +238,4 @@ harrypoterclean %>%
   filter(word != "sir") %>%
   filter(n == max(n)) %>%
   ungroup()
-
-  
-  
-  
-
 ```
