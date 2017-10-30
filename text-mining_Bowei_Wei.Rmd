@@ -3,9 +3,6 @@ title: "Text Analyis"
 output: github_document
 ---
 
-
-
-
 # Your mission
 
 Perform text analysis.
@@ -22,14 +19,11 @@ Do the above. Can't think of a data source?
 - `AssociatedPress` from the `topicmodels` package
 - `NYTimes` or `USCongress` from the `RTextTools` package
 - Harry Potter Complete 7 Books text
-    ```{r}
-    if (packageVersion("devtools") < 1.6) {
-  install.packages("devtools")
-}
-
-devtools::install_github("bradleyboehmke/harrypotter")
-library(harrypotter)
-    ```
+```{r} 
+  if (packageVersion("devtools") < 1.6) {
+  install.packages("devtools")}
+  devtools::install_github("bradleyboehmke/harrypotter")
+```
 - [State of the Union speeches](https://pradeepadhokshaja.wordpress.com/2017/03/31/scraping-the-web-for-presdential-inaugural-addresses-using-rvest/)
 - Scrape tweets using [`twitteR`](https://www.credera.com/blog/business-intelligence/twitter-analytics-using-r-part-1-extract-tweets/)
 
@@ -41,21 +35,114 @@ Analyze the text for sentiment OR topic. **You do not need to do both**. The dat
 We will spend the next 2 weeks working on analyzing textual data in R. You will do the following:
 
 - Start with some text based data.
-```{r}
-chamber_of_secrets
-deathly_hallows
-goblet_of_fire
-half_blood_prince
-order_of_the_phoenix
-philosophers_stone
-prisoner_of_azkaban
-
-
-```
 - Clean data and prepare it for analysis
 - Ask questions about the data
 - Answer these questions with the data using tables and graphics
 - Each group member must have their own unique question that they code the answer for. 
-- Whose the most important character in the book based on the frequency of mentioned?
-- 
+
+# Cleaning the data
+
+```{r}
+# Load packages necessary for the data analysis
+library(dplyr)
+library(stringr)
+library(tidytext)
+library(ggplot2)
+library(RColorBrewer)
+library(harrypotter)
+library(tidyr)
+library(RColorBrewer)
+library(wordcloud)
+library(rebus)
+```
+
+
+```{r}
+# Combine all The Harry Potter books into 1 dataframe and add column which will be used a reference "Title"
+book1 <- data_frame(Title="Harry Potter and the Philosopher's Stone", text=philosophers_stone)
+book2 <- data_frame(Title="Harry Potter and the Chamber of Secrets", text=chamber_of_secrets)
+book3 <- data_frame(Title="Harry Potter and the Prisoner of Azkaban", text=prisoner_of_azkaban)
+book4 <- data_frame(Title="Harry Potter and the Goblet of Fire", text=goblet_of_fire)
+book5 <- data_frame(Title="Harry Potter and the Order of the Phoenix", text=order_of_the_phoenix)
+book6 <- data_frame(Title="Harry Potter and the Half-blood Prince", text=half_blood_prince)
+book7 <- data_frame(Title="Harry Potter and the Deathly Hallows", text=deathly_hallows)
+```
+
+```{r}
+# Fetch Book metadata from theGuardian.com e.g publisher, ranking, sales, author e.t.c 
+
+bookMetadata <- read.csv("https://docs.google.com/spreadsheets/d/1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA/export?format=csv&id=1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA&gid=0")
+
+# Join BookMetadata and HarryPotter dfs by "Title"
+harrypotter_and_metadata <- rbind(book1,book2, book3, book4, book5, book6, book7) %>% inner_join(bookMetadata, by = "Title")%>%
+  group_by(Title) %>%
+  mutate(Chapter = row_number())%>% # add chapter
+     ungroup()
+
+  harrypotterSeries <- harrypotter_and_metadata %>%
+ unnest_tokens(sentence, text, token = "sentences") %>%
+  mutate(line = row_number()) # add sentences
+
+head(harrypotterSeries)
+```
+
+```{r}
+#Restructure it in the one-token-per-row format
+harrypotter_tokenized <- harrypotterSeries %>%
+  unnest_tokens(word, sentence)
+
+harrypotter_tokenized %>%
+  select(Title, Chapter, word) %>%
+  head()
+```
+
+```{r}
+#Remove stop words
+harrypotter_clean_tokens <- harrypotter_tokenized %>% 
+   anti_join(stop_words)  
+```
+
+# Questions for analysis: 
+
+1. what is the most important thing for Harry Potter based on how much is whas mentioned in the analysis about him?
+```{r}
+#web scrape main characters of Harry Potter Series from
+library(XML)
+library(RCurl)
+# download harry potter wikipedia page
+hp_wikipedia_sum = readLines('https://en.wikipedia.org/wiki/Harry_Potter_(character)')
+#set the summary into a dataframe and name a title called SUM
+sum <- data.frame(Title = "SUM", text = hp_wikipedia_sum)
+
+#Restructure it in the one-token-per-row format
+sum_tokenized <- sum %>%
+  unnest_tokens(word, sentence)
+
+#define custom stop word used in data cleaning
+custom_stop_words <- c('Wikipedia','Wikimedia','The','Puppet','book','Stories','Harry')
+
+#exclude the custom stop words
+hp_wikipedia_sum %>% anti_join(custom_stop_words)
+
+#exclude stop words
+hp_wikipedia_sum %>% anti_join(stop_words)
+
+word_count <- hp_wikipedia_sum %>% 
+  count(word, sort = TRUE) %>% 
+   mutate(word = reorder(word, n))
+head(word_count)
+# Visualization of the most common words
+word_count_gt_600 <- word_count %>%
+  filter(n > 600)
+
+
+
+# plot using word cloud
+ 
+  wordcloud(words = word_count_gt_600$word, freq = word_count_gt_600$n, min.freq = 1,
+          random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+```
+
+```
 
