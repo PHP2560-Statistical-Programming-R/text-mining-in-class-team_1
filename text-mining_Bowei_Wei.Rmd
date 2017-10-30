@@ -54,6 +54,7 @@ library(tidyr)
 library(RColorBrewer)
 library(wordcloud)
 library(rebus)
+library(textreadr)
 ```
 
 
@@ -106,40 +107,42 @@ harrypotter_clean_tokens <- harrypotter_tokenized %>%
 
 1. what is the most important thing for Harry Potter based on how much is whas mentioned in the analysis about him?
 ```{r}
-#web scrape main characters of Harry Potter Series from
-library(XML)
-library(RCurl)
-# download harry potter wikipedia page
-hp_wikipedia_sum = readLines('https://en.wikipedia.org/wiki/Harry_Potter_(character)')
-#set the summary into a dataframe and name a title called SUM
-sum <- data.frame(Title = "SUM", text = hp_wikipedia_sum)
+# extract text from Harry Potter (character)'s summary
+hp_wikipedia_sum = read_docx('E:/PHP2560/text-mining-in-class-team_1/HarryPotter-Summary.docx')
+
+#set the summary into a dataframe and name a title called hp.sum
+hp.sum <- data.frame(line = 1:109, text = hp_wikipedia_sum)
 
 #Restructure it in the one-token-per-row format
-sum_tokenized <- sum %>%
+sum_tokenized <- hp.sum %>%
+  unnest_tokens(sentence, text, token = "sentences") %>%
+  mutate(line = row_number()) # add sentences
+
+sum.word.list <- sum_tokenized %>%
   unnest_tokens(word, sentence)
 
 #define custom stop word used in data cleaning
-custom_stop_words <- c('Wikipedia','Wikimedia','The','Puppet','book','Stories','Harry')
+custom_stop_words <-  data.frame(line = 1:9, word = c('Wikipedia','Wikimedia','The','Puppet','rowling','Stories','harry','potter',"harry's"))
 
-#exclude the custom stop words
-hp_wikipedia_sum %>% anti_join(custom_stop_words)
+#exclude custom stop word and stop words
+tidylist <- sum.word.list %>% 
+  anti_join(custom_stop_words, by = "word") %>% 
+  anti_join(stop_words)
 
-#exclude stop words
-hp_wikipedia_sum %>% anti_join(stop_words)
-
-word_count <- hp_wikipedia_sum %>% 
+#count words
+word_count <- tidylist %>% 
   count(word, sort = TRUE) %>% 
    mutate(word = reorder(word, n))
 head(word_count)
 # Visualization of the most common words
-word_count_gt_600 <- word_count %>%
-  filter(n > 600)
+word_count_gt_10 <- word_count %>%
+  filter(n > 10)
 
 
 
 # plot using word cloud
  
-  wordcloud(words = word_count_gt_600$word, freq = word_count_gt_600$n, min.freq = 1,
+  wordcloud(words = word_count_gt_10$word, freq = word_count_gt_10$n, min.freq = 1,
           random.order=FALSE, rot.per=0.35, 
           colors=brewer.pal(8, "Dark2"))
 ```
