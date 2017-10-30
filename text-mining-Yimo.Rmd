@@ -45,3 +45,30 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 - Answer these questions with the data using tables and graphics
 - Each group member must have their own unique question that they code the answer for. 
 
+```{r}
+Book1 <- data_frame(text=philosophers_stone)
+Book1_tidy <- Book1 %>%
+  unnest_tokens(word,text)
+
+book_tidy = function(name){
+  text = data_frame(text = get(name))
+  df = text %>%
+    unnest_tokens(word, text)
+  title = data.frame(name)
+  names(title) = "book"
+  return(cbind(title, df))
+}
+
+
+names = c("philosophers_stone",
+         "chamber_of_secrets",
+         "prisoner_of_azkaban",
+         "goblet_of_fire",
+         "order_of_the_phoenix",
+         "half_blood_prince",
+         "deathly_hallows")
+
+book1 = book_tidy(names[1])
+
+
+```
