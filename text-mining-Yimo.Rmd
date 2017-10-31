@@ -45,13 +45,46 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 - Answer these questions with the data using tables and graphics
 - Each group member must have their own unique question that they code the answer for. 
 
+# Group Question Sets
 ```{r}
-Book1 <- data_frame(text=philosophers_stone)
-Book1_tidy <- Book1 %>%
-  unnest_tokens(word,text)
+## Questions for analysis: 
+## 1. what is the most important charecter based on how much is whas mentioned ? 
+## 2. what is the most scariest book based on sentiment analysis ?
+## 3. what the top ten used words in exception to stop words ?
+## 4. sentiments by books 
+## 5. sentiment by popularity based on "https://www.theguardian.com/news/datablog/2012/aug/09/best-selling-books-all-time-fifty-shades-grey-compare" 
+# And the sixth question is unique for every student.
+```
+
+# Preperation
+```{r}
+
+    if (packageVersion("devtools") < 1.6) {
+  install.packages("devtools")
+}
+
+devtools::install_github("bradleyboehmke/harrypotter")
+
+
+
+library(devtools)
+library(harrypotter)
+library(rebus)
+library(tidytext)
+library(dplyr)
+library(stringr)
+library(stringi)
+library(ggplot2)
+```
+
+
+
+#1. Preperation
+```{r}
 
 book_tidy = function(name){
-  text = data_frame(text = get(name))
+  text = tibble(text = get(name))%>%
+    mutate(chapter = row_number())
   df = text %>%
     unnest_tokens(word, text)
   title = data.frame(name)
@@ -68,7 +101,81 @@ names = c("philosophers_stone",
          "half_blood_prince",
          "deathly_hallows")
 
-book1 = book_tidy(names[1])
 
+
+#
+harrypotter = rep(list(tibble()), 7)
+whole_series = tibble()
+
+#Save 7 books in a list, each in a tibble and remove the stop words.
+for(i in 1:7){
+  harrypotter[[i]] = book_tidy(names[i]) %>%
+                     anti_join(stop_words)
+ 
+}
+
+for(i in 1:length(names)){
+  whole_series = rbind(whole_series, book_tidy(names[i]))%>%
+    anti_join(stop_words, by = "word")
+}
+
+
+#Count the words
+word_frequency = whole_series %>%
+  
+                  count(book, word)%>%
+  group_by(book)%>%
+  top_n(10)%>%
+  arrange(desc(n))%>%
+  ungroup()%>%
+  
+  mutate(word = reorder(word, n))
+ 
+
+ggplot(word_frequency, aes(x = word, y = n, fill = book))+
+   geom_col(show.legend = FALSE) +
+  facet_wrap(~book, scales = "free") +  
+  coord_flip()
+
+#As we can see in the plot, Harry is the most important character in the novel. Also the second and third important character is Ron and Hermione.
+character_txt = readLines("1_characters.txt")
+pattern = "\t" %R% optional(or("Professor ", "")) %R% capture(one_or_more(WRD))
+characters = str_match(character_txt ,pattern = pattern)
+remove_NA = characters[,2][!is.na(characters[,2])]
+name_of_character = tibble(word = str_to_lower(remove_NA))
+
+
+  
+
+ 
 
 ```
+
+# Sentiment analysis
+##1. The scarest book
+```{r}
+emotion = get_sentiments("nrc")
+unique(emotion[,2])
+
+total = whole_series%>%
+  count(book)%>%
+  rename(total_word = n)
+
+
+scare_emotion = whole_series%>%
+  left_join(total, by = "book")%>%
+  inner_join(emotion, by = "word")%>%
+  count(book, sentiment, total_word)%>%
+  ungroup()%>%
+  mutate(percent = n/total_word)%>%
+  filter(sentiment == "fear")%>%
+  arrange(desc(percent))
+
+
+  ggplot(scare_emotion, aes(x = book, y = percent, fill = book))+
+  geom_col(show.legend = F)
+
+
+  
+```
+##2. Sentiment by book
