@@ -384,7 +384,7 @@ hp_sentiment%>%
 
 ```
 
-2. How does negative sentiments changes over time? Is there any similarities in the 1st and last chapter?
+8. How does negative sentiments changes over time? Is there any similarities in the 1st and last chapter?
 ```{r  message=FALSE, warning=FALSE}
 
 harrypotter_sentiment%>%
@@ -401,7 +401,7 @@ harrypotter_sentiment%>%
 ```
 
 
-3. How does sentiment changes over time for each book? Which book has the highest variation?
+9. How does sentiment changes over time for each book? Which book has the highest variation?
 ```{r  message=FALSE, warning=FALSE}
 
 
@@ -422,7 +422,7 @@ ggplot(hp_df, aes(Chapter, sentiment, colour = Title))+
 # looks like Harry Potter and the Deathly Hallows has the highest sentimental variation
 ```
 
-4. How frequently did  the top 8 most popular characters appear in the last Book
+10. How frequently did  the top 8 most popular characters appear in the last Book
 ```{r  message=FALSE, warning=FALSE}
 top_n_characters <- harrypotter_clean_tokens %>%
   mutate(id = R.utils::capitalize(word)) %>%
@@ -448,7 +448,7 @@ harrypotter_clean_tokens %>%
   ylab("% frequency of Character")
 ```
 
-7. What are the top 6 topics discussed in harry potter
+11. What are the top 6 topics discussed in harry potter
 
 ```{r  message=FALSE, warning=FALSE}
 # include only words and  not characters
@@ -485,7 +485,7 @@ head(chapter_topics)
 
 # it is dificult to decode all types of  topics potrayed by the author, because of low LDA k value. Increasing k slows down runtime
 ```
-7. How Does the 6 topics discussed varry from each series of Harry Potter
+12. How Does the 6 topics discussed varry from each series of Harry Potter
 ```{r message=FALSE, warning=FALSE}
 tidy(chapters_lda, matrix = "gamma") %>%
   # extract book title
