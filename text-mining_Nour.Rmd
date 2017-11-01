@@ -222,8 +222,18 @@ inner_join( characters_listjoin, by = "word" ) %>%
     geom_col(show.legend = FALSE) +
     scale_x_discrete(labels = function(x) gsub("__.+$", "", x)) +
     facet_wrap(~ Book, nrow = 2, scales = "free") +
-    coord_flip()
-  
+    coord_flip() +
+   theme_minimal() + # start with a minimal them and add what we need 
+  theme( text = element_text(color = "gray20"),
+         axis.text = element_text(face = "italic"), 
+         axis.text.x = element_text(size = 7),
+          axis.ticks.x = element_blank(),
+         axis.line = element_line(color = "gray50", size = 0.5), 
+         axis.line.y   = element_blank(), 
+         panel.grid.major.y = element_blank(),
+         panel.grid.minor.x = element_line(color = "gray50", size = .5),
+         panel.grid.major.x = element_line(color = "gray50", size = .5)
+  )
 ```
 
 how harry mentioned changed by Book graph 
@@ -231,8 +241,26 @@ how harry mentioned changed by Book graph
 harrypoterclean %>%
   inner_join(characters_listjoin, by = "word") %>%
   count(Book, word) %>%
-  filter(word == "harry")
+  filter(word == "harry") %>%
 # plotting graph by book 
+ggplot(aes(x = Book, y = n, fill = Book)) +
+  geom_col(width = .7 ,show.legend = T ) +
+  theme_minimal() + # start with a minimal them and add what we need 
+  theme( text = element_text(color = "gray20"),
+         legend.position = c("top"), # position the legend to the upper left 
+         legend.direction = "horizontal", 
+         legend.justification = 0.1, # anchor point for legend position 
+         legend.text = element_text(size = 7, color = "black"),
+         axis.text = element_text(face = "italic"), 
+         axis.text.x = element_text(size = 7),
+         axis.line = element_line(color = "gray50", size = 0.5), 
+         axis.line.y = element_blank(), 
+         panel.grid.major = element_line(color = "gray50", size = .5),
+         panel.grid.major.x = element_blank(),
+         panel.grid.minor = element_line(color = "gray50", size = .5)
+         )
+  
+  
 ```
 
 sentiment by Book 
@@ -254,7 +282,18 @@ harrypoterclean %>%
     geom_col(show.legend = FALSE) +
     scale_x_discrete(labels = function(x) gsub("__.+$", "", x)) +
     facet_wrap(~Book, nrow = 2, scales = "free") +
-    coord_flip()
+    coord_flip()  +
+   theme_minimal() + # start with a minimal them and add what we need 
+  theme( text = element_text(color = "gray20"),
+         axis.text = element_text(face = "italic"), 
+         axis.text.x = element_text(size = 7),
+          axis.ticks.x = element_blank(),
+         axis.line = element_line(color = "gray50", size = 0.5), 
+         axis.line.y   = element_blank(), 
+         panel.grid.major.y = element_blank(),
+         panel.grid.minor.x = element_line(color = "gray50", size = .3),
+         panel.grid.major.x = element_line(color = "gray50", size = .3)
+  )
 ```
 frequency of harry mentioning over the books: 
 ```{r}
