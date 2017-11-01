@@ -75,6 +75,8 @@ library(dplyr)
 library(stringr)
 library(stringi)
 library(ggplot2)
+library(tidyverse)
+library(tidyr)
 ```
 
 
@@ -83,12 +85,16 @@ library(ggplot2)
 ```{r}
 
 book_tidy = function(name){
-  text = tibble(text = get(name))%>%
+  chapter = tibble(text = get(name))%>%
     mutate(chapter = row_number())
-  df = text %>%
-    unnest_tokens(word, text)
-  title = data.frame(name)
-  names(title) = "book"
+  
+  sentence = chapter%>%
+    unnest_tokens(sentence, text, token = "sentences")%>%
+    mutate(sentences = row_number())
+  
+  df = sentence %>%
+    unnest_tokens(word, sentence)
+  title = tibble(book = name)
   return(cbind(title, df))
 }
 
@@ -119,35 +125,40 @@ for(i in 1:length(names)){
     anti_join(stop_words, by = "word")
 }
 
+#The name of main characters was found in website "https://en.wikipedia.org/wiki/List_of_Harry_Potter_characters", the content is simply copy and paste into local .txt document called characters.txt.
 
-#Count the words
-word_frequency = whole_series %>%
-  
-                  count(book, word)%>%
+characters_txt = readLines("harry_potter_characters.txt")
+pattern = "\t" %R% capture(one_or_more(WRD)) %R% SPC %R% capture(one_or_more(WRD))
+characters = str_match(str_to_lower(characters_txt), pattern = pattern)%>%
+  as_tibble()%>%
+  setNames(c("name", "first_name", "last_name"))%>%
+  filter(!is.na(name))
+
+name_freq = whole_series%>%
+  inner_join(characters, by = c(word = "first_name"))%>%
+  count(book, word)%>%
   group_by(book)%>%
   top_n(10)%>%
   arrange(desc(n))%>%
   ungroup()%>%
-  
   mutate(word = reorder(word, n))
  
 
-ggplot(word_frequency, aes(x = word, y = n, fill = book))+
+ggplot(name_freq, aes(x = word, y = n, fill = book))+
    geom_col(show.legend = FALSE) +
   facet_wrap(~book, scales = "free") +  
   coord_flip()
-
+ 
 #As we can see in the plot, Harry is the most important character in the novel. Also the second and third important character is Ron and Hermione.
-character_txt = readLines("1_characters.txt")
-pattern = "\t" %R% optional(or("Professor ", "")) %R% capture(one_or_more(WRD))
-characters = str_match(character_txt ,pattern = pattern)
-remove_NA = characters[,2][!is.na(characters[,2])]
-name_of_character = tibble(word = str_to_lower(remove_NA))
 
-
+#Count the name frequency based on chapter
+name_chap_freq = whole_series%>%
+  inner_join(characters, by = c(word = "first_name"))%>%
+  count(book, chapter, word)%>%
+  spread(word, n, fill = 0)%>%
   
 
- 
+
 
 ```
 
