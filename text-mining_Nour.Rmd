@@ -59,7 +59,7 @@ library(harrypotter)
 library(tidytext)
 library(rebus)
 ```
-
+# data importing and cleaning 
 ```{r}
 # tidying the text of the first book: 
   chamber_of_secrets_tidy <- data_frame( text = chamber_of_secrets, Book = "chamber_of_secrets") %>%
@@ -89,27 +89,23 @@ unnest_tokens(sentence, text, token = "sentences") %>%
 prisoner_of_azkaban_tidy <- data_frame(text = prisoner_of_azkaban, Book = "prisoner_of_azkaban") %>%
 unnest_tokens(sentence, text, token = "sentences") %>%
   mutate(line = row_number())
-```
 
-```{r}
 # making one dataframe for all books 
 harrypoter <- rbind(chamber_of_secrets_tidy, deathly_hallows_tidy, goblet_of_fire_tidy, half_blood_prince_tidy, order_of_the_phoenix_tidy, philosophers_stone_tidy, prisoner_of_azkaban_tidy) 
 harrypoter
-```
-```{r}
+
 #remove stop words that are unncessary for analysis like a, an , as ... etc. 
 harrypoterclean <- harrypoter %>%
   unnest_tokens(word, sentence) %>%
   anti_join(stop_words)
 
 ```
-
+# chracters list 
 ```{r}
 # making list of  the whole series characters: 
 # after making a txt file from "https://en.wikipedia.org/wiki/List_of_Harry_Potter_characters" then importing to R 
  characters_raw <- readLines("characters_ weki.txt")
-```
-```{r}
+
 # extracting names only based on pattern of two names start with an upper case and space between them.
 # used capture to get first and last names seperatly into the data frame. 
 characters_raw2 <- str_match( characters_raw, capture (UPPER %R% one_or_more(WRD)) %R% SPC %R% capture(UPPER %R% one_or_more(WRD)))
@@ -143,18 +139,27 @@ Q1 what is the most important charecter based on how much is whas mentioned ?
  harrypoterclean %>%
 inner_join( characters_listjoin, by = "word" ) %>%
 count(Book, word,sort= TRUE)  
-# not that joining and counting was done using first name only wich is not accurate. due to inability to use full name because  full names not always mentiond. also family name cannot be used becaue it is shared between many characters. 
+# not that joining and counting was done using first name only wich is not accurate. due to inability to use full name because full names not always mentiond. also family name cannot be used because it is shared between different characters. 
 ```
 Q2 what is the most scariest book based on sentiment analysis ?
 ```{r}
 harrypoterclean %>%
-  # joining with sentiment "bing"
-  inner_join(get_sentiments("bing")) %>%
-  group_by(Book) %>%
-  count( Book, sentiment , sort = TRUE) %>%
+  count(Book) %>%
+  rename(total_word = n) %>%
+  ungroup() %>%
+  left_join(harrypoterclean, "Book") %>%
+  # joining with sentiment "nrc"
+   inner_join(get_sentiments("nrc")) %>%
+  count( Book,total_word, sentiment , sort = TRUE) %>%
+  ungroup() %>%
+  mutate(percent = n/total_word)%>%
   # filtering only negative sentiments
-  filter(sentiment == "negative")
-  # the most negative book is order_of_the_phoenix with 8774 negative word. 
+  filter(sentiment == "fear") %>%
+  arrange(desc(percent)) %>%
+
+ggplot( aes(x = Book, y = percent, fill = Book))+
+  geom_col(show.legend = F)
+  
 ```
 
 ```{r}
