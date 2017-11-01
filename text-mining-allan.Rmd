@@ -1,6 +1,6 @@
 ---
 title: "Text Analyis"
-output: github_document
+output: html_document
 ---
 
 
@@ -151,12 +151,10 @@ book6 <- data_frame(Title="Harry Potter and the Half-blood Prince", text=half_bl
 book7 <- data_frame(Title="Harry Potter and the Deathly Hallows", text=deathly_hallows)
 
 # Join BookMetadata and HarryPotter dfs by "Title"
-harrypotter_and_metadata <- rbind(book1,book2, book3, book4, book5, book6, book7) %>% inner_join(bookMetadata, by = "Title")%>%
+harrypotterSeries <- rbind(book1,book2, book3, book4, book5, book6, book7) %>%
   group_by(Title) %>%
   mutate(Chapter = row_number())%>% # add chapter
-  ungroup()
-
-harrypotterSeries <- harrypotter_and_metadata %>%
+  ungroup()%>%
   unnest_tokens(sentence, text, token = "sentences") %>%
   mutate(line = row_number()) # add sentences
 
@@ -184,7 +182,7 @@ harrypotter_clean_tokens <- harrypotter_tokenized %>%
 ```
 
 ## Quantitative and Sentimental Analysis
-1. what is the most important charecter based on how much it was mentioned 
+###Q1. what is the most important charecter based on how much it was mentioned 
 ```{r  message=FALSE, warning=FALSE}
 
 harrypotter_clean_tokens %>%
@@ -193,7 +191,7 @@ harrypotter_clean_tokens %>%
   count(FullName,sort= TRUE)  
 ```
 
-2. what is the most scariest book based on sentiment analysis ?
+###Q2. what is the most scariest book based on sentiment analysis ?
 
 ```{r  message=FALSE, warning=FALSE}
 hp_negative_sentiment<-harrypotter_clean_tokens%>%
@@ -215,7 +213,7 @@ hp_negative_sentiment %>%
 
 ```
 
-3. What the top ten used words in exception to stop words ?
+###Q3. What the top ten used words in exception to stop words ?
 ```{r  message=FALSE, warning=FALSE}
 word_count <- harrypotter_clean_tokens %>% 
   count(word, sort = TRUE) %>% 
@@ -237,10 +235,63 @@ wordcloud(words = word_count_gt_600$word, freq = word_count_gt_600$n, min.freq =
           colors=brewer.pal(8, "Dark2"))
 
 ```
+###Q4. sentiments by books 
+
+```{r  message=FALSE, warning=FALSE}
+hp_sentiment_by_book <- harrypotter_clean_tokens%>%
+  # join nrc to get sentiment value
+  inner_join(get_sentiments("nrc"), by = "word") %>%
+  # join nrc to get sentiment score
+  inner_join(get_sentiments("afinn"), by = "word") %>%
+  group_by(Title,sentiment)%>%
+  summarise(count=sum(score)) %>%
+  arrange(desc(count)) 
+
+hp_sentiment_by_book%>%
+  # get top 15 only
+  top_n(15) %>% 
+  ungroup %>%
+  # plot the graph
+  ggplot(aes(sentiment, count, fill = Title)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = NULL, y = "Score") +
+  facet_wrap(~Title) +
+  coord_flip()
+```
+
+###Q5. sentiment by popularity based on www.theguardian.com
+
+```{r  message=FALSE, warning=FALSE}
+hp_by_sales<- harrypotter_clean_tokens%>%
+  # join nrc to get sentiment value
+  inner_join(get_sentiments("nrc"), by = "word") %>%
+  # join nrc to get sentiment score
+  inner_join(get_sentiments("afinn"), by = "word") %>%
+  group_by(Title)%>%
+  summarise(count=sum(score)) %>%
+  mutate(perc_sentiment=(count/sum(count))*2) %>%
+  arrange(desc(perc_sentiment))%>%
+  inner_join(bookMetadata, by = "Title")%>%
+  mutate(sales=as.numeric(gsub(",","",Volume.Sales)))
+
+df<- data.frame(hp_by_sales)
+# plot the graph
+ggplot(df)  + 
+  geom_bar(aes(x=Title, y=sales,  fill=Title),stat="identity")+
+  geom_line(aes(x=Title, y=perc_sentiment*max(df$sales)),group=1)+
+  geom_point(aes(label=perc_sentiment, x=Title, y=perc_sentiment*max(df$sales)), colour="brown")+
+  geom_text(aes(label=sales, x=Title, y=0.97*sales), colour="black")+
+  scale_y_continuous(sec.axis = sec_axis(~./max(df$sales)))+
+  labs(x = "Book", y = "Sales/Popularity")+
+  theme(
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+# looks like sentimental score is proportioal to the sale/Popularity. But there could be a confounding variable existing or sentimental score is just temporal
+```
 
 ## More Sentimental & Quantitative Analysis
 
-1. Which is the most common word pairs (ngrams) in harry potter series 
+###Q1. Which is the most common word pairs (ngrams) in harry potter series 
 ```{r  message=FALSE, warning=FALSE}
 harrypotterSeries_ngrams <- harrypotterSeries %>%
   unnest_tokens(bigram, sentence, token = "ngrams", n = 2) %>%
@@ -264,7 +315,7 @@ bigram_counts%>%
        y = "second word in pair")
 
 ```
-1. Analyze the network structure of the word pairs (ngrams) in harry potter series 
+###Q2. Analyze the network structure of the word pairs (ngrams) in harry potter series 
 ```{r  message=FALSE, warning=FALSE}
 bigram_graph <- bigram_counts %>%
   filter(n > 60) %>%
@@ -283,7 +334,7 @@ ggraph(bigram_graph, layout = "fr") +
 ```
 
 
-1. Examine how often sentiment-associated words are preceded by “not” or other negating words.
+###Q3. Examine how often sentiment-associated words are preceded by “not” or other negating words.
 
 ```{r  message=FALSE, warning=FALSE}
 # create hp_big_grams object
@@ -316,7 +367,7 @@ hp_negated_words %>%
 ```
 
 
-1.What is the frequency distribution of words for each Harry Potter Book
+###Q4.What is the frequency distribution of words for each Harry Potter Book
 ```{r  message=FALSE, warning=FALSE}
 book_words <- harrypotter_clean_tokens %>%
   count(Title, word, sort = TRUE) %>%
@@ -336,7 +387,7 @@ ggplot(book_words, aes(n/total, fill = Title)) +
 
 # These plots exhibit similar distributions for all the books, with most of the words occuring rarely and fewer words that occur frequently.
 ```
-3. Does Zipf’s law holds for Harry Potter series? 
+###Q5. Does Zipf’s law holds for Harry Potter series? 
 ```{r  message=FALSE, warning=FALSE}
 freq_by_rank <- book_words %>% 
   group_by(Title) %>% 
@@ -353,7 +404,7 @@ freq_by_rank %>%
 # We see that all 7 novels are similar to each other, and that the relationship between rank and frequency does have negative slope. 
 
 ```
-3. Does  *power law*  holds in Harry Potter series? 
+###Q6. Does  *power law*  holds in Harry Potter series? 
 ```{r  message=FALSE, warning=FALSE}
 rank_subset <- freq_by_rank %>% 
   filter(rank < 500,
@@ -370,7 +421,7 @@ freq_by_rank %>%
 # we can see that we have deviations at higher ranks.This is unusual, because the author uses  a lower percentage of the most common words
 ```
 
-1. How does positive sentiment change over time, Does the author has a specific pattern of control of positive sentiment?
+###Q7. How does positive sentiment change over time, Does the author has a specific pattern of control of positive sentiment?
 ```{r  message=FALSE, warning=FALSE}
 # using nrc and afinn to get both sentiment and score
 harrypotter_sentiment <- harrypotter_clean_tokens%>%
@@ -378,7 +429,6 @@ harrypotter_sentiment <- harrypotter_clean_tokens%>%
   inner_join(get_sentiments("afinn"), by = "word") %>%
   group_by(Title, Chapter,sentiment)%>%
   summarise(count=sum(score))
-
 
 harrypotter_sentiment%>%
   filter(count>0)%>%
@@ -394,9 +444,10 @@ harrypotter_sentiment%>%
 
 ```
 
-2. How does negative sentiments changes over time? Is there any similarities in the 1st and last chapter?
+###Q8. How does negative sentiments changes over time? Is there any similarities in the 1st and last chapter?
 ```{r  message=FALSE, warning=FALSE}
 
+# plot sentiment df
 harrypotter_sentiment%>%
   filter(count<0)%>%
   ggplot( aes(x = Chapter, y = count)) + 
@@ -411,7 +462,7 @@ harrypotter_sentiment%>%
 ```
 
 
-3. How does sentiment changes over time for each book? Which book has the highest variation?
+###Q9. How does sentiment changes over time for each book? Which book has the highest variation?
 ```{r  message=FALSE, warning=FALSE}
 
 
@@ -432,7 +483,7 @@ ggplot(hp_df, aes(Chapter, sentiment, colour = Title))+
 # looks like Harry Potter and the Deathly Hallows has the highest sentimental variation
 ```
 
-4. How frequently did  the top 8 most popular characters appear in the last Book
+###Q10. How frequently did  the overall top 8 most popular characters appear in the last Book
 ```{r  message=FALSE, warning=FALSE}
 top_n_characters <- harrypotter_clean_tokens %>%
   mutate(id = R.utils::capitalize(word)) %>%
@@ -457,7 +508,8 @@ harrypotter_clean_tokens %>%
   scale_y_continuous(labels = scales::percent_format()) +
   ylab("% frequency of Character")
 ```
-7. What are the top 6 topics discussed in harry potter
+
+###Q11. What are the top 6 topics discussed in harry potter
 
 ```{r  message=FALSE, warning=FALSE}
 # include only words and  not characters
@@ -480,13 +532,13 @@ chapters_lda <- LDA(chapters_dtm, k = 6, control = list(seed = 4564))
 chapter_topics <- tidy(chapters_lda, matrix = "beta")
 head(chapter_topics)
 
- chapter_topics %>%
+chapter_topics %>%
   group_by(topic) %>%
   top_n(10, beta) %>% #get only top 10 terms
   ungroup() %>%
   arrange(topic, -beta) %>%
   mutate(term = reorder(term, beta)) %>%
-   # generate graph
+  # generate graph
   ggplot(aes(term, beta, fill = factor(topic))) +
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
@@ -494,7 +546,8 @@ head(chapter_topics)
 
 # it is dificult to decode all types of  topics potrayed by the author, because of low LDA k value. Increasing k slows down runtime
 ```
-7. How Does the 6 topics discussed varry from each series of Harry Potter
+
+###Q12. How Does the 6 topics discussed varry from each series of Harry Potter
 ```{r message=FALSE, warning=FALSE}
 tidy(chapters_lda, matrix = "gamma") %>%
   # extract book title
@@ -506,5 +559,5 @@ tidy(chapters_lda, matrix = "gamma") %>%
 
 
 # Acknowledgments
-“Tidy Text Mining with R”: http://tidytextmining.com 
+Template from “Tidy Text Mining with R”: http://tidytextmining.com 
 
