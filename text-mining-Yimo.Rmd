@@ -75,6 +75,7 @@ library(dplyr)
 library(stringr)
 library(stringi)
 library(ggplot2)
+library(tidyverse)
 ```
 
 
@@ -83,6 +84,26 @@ library(ggplot2)
 ##1.1 Load the 7 novels in harry potter series. Add chapter, sentence and word column for further analysis. Remove stop_words as text_cleaning. Save these books in variables.
 ```{r}
 #Function that adds columns called chapter, sentence, word and title, where word contain individual words in the novel, while sentence and chapter refers to the correpsonding chapter and sentence that the word appears, and book referes to the name of the book.
+
+
+
+# Fetch Book metadata from theGuardian.com e.g publisher, ranking, sales, author e.t.c 
+bookMetadata <- as_tibble(read.csv("https://docs.google.com/spreadsheets/d/1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA/export?format=csv&id=1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA&gid=0"))
+
+harry_potter = "harry potter and the "
+bookMetadata$Title  = bookMetadata$Title%>%
+  str_to_lower()%>%
+  str_replace_all(pattern = or(harry_potter, "'", ":children's edition"), "")%>%
+  str_replace_all(pattern = or(" ", "-"), "_")
+
+bookMetadata$Volume.Sales = bookMetadata$Volume.Sales%>%
+  str_replace_all(pattern = ",", "")%>%
+  as.numeric()
+
+
+
+
+
 book_tidy = function(name){
 #Add chapter
   pattern = one_or_more(one_or_more(UPPER) %R% optional(SPC) %R% optional("-"))
@@ -126,9 +147,9 @@ whole_series = tibble()
 
 #Save 7 books in a list
 for(i in 1:7){
-  harrypotter[[i]] = book_tidy(names[i])
-                    
-            
+  harrypotter[[i]] = book_tidy(names[i])%>%
+    arrange(chapter, sentences)%>%
+    anti_join(stop_words)
 }
 
 #Save 7 books in a tibble
@@ -257,6 +278,29 @@ ggplot(emotion_in_chap, aes(x = chapter, y = contribution, fill = book))+
   geom_col()+
   facet_wrap(~book, scales = "free_x")
   
+```
+##2.2 Sentiment by popularity
+```{r}
+sentiment_by_popularity = whole_series%>%
+  count(book, chapter, word)%>%
+  inner_join(score, by = "word")%>%
+  inner_join(bookMetadata, by = c(book = "Title"))%>%
+  rename(sales = Volume.Sales)%>%
+  group_by(book, sales)%>%
+  summarise(contribution = sum(n*score))
+
+ggplot(sentiment_by_popularity, aes(x = book, y = sales, fill = contribution), stat = "identity")+
+  geom_col()
+
+date_pattern = ", " %R% capture(UPPER %R% one_or_more(WRD)) %R% SPC %R% capture(one_or_more(DGT)) %R% "," %R% SPC %R% capture(one_or_more(DGT))
+bookMetadata = bookMetadata%>%
+  mutate(year = str_match(bookMetadata$Publication.Date, pattern = date_pattern)[,4])
+
+dates2 <- c("20jan07","06sep01","6august05","6august2005","20june1999") 
+ndates2 <- as.Date(dates2, "%d%b%y"); ndates2
+as.Date('April 26, 2001', format='%B %d, %Y')
+
+
 ```
 
 
