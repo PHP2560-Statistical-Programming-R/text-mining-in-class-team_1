@@ -75,8 +75,6 @@ library(dplyr)
 library(stringr)
 library(stringi)
 library(ggplot2)
-library(tidyverse)
-library(tidyr)
 ```
 
 
@@ -134,8 +132,10 @@ characters = str_match(str_to_lower(characters_txt), pattern = pattern)%>%
   setNames(c("name", "first_name", "last_name"))%>%
   filter(!is.na(name))
 
+name = tibble(name = unique(c(characters$first_name, characters$last_name)))
+
 name_freq = whole_series%>%
-  inner_join(characters, by = c(word = "first_name"))%>%
+  inner_join(name, by = c(word = "name"))%>%
   count(book, word)%>%
   group_by(book)%>%
   top_n(10)%>%
@@ -153,10 +153,32 @@ ggplot(name_freq, aes(x = word, y = n, fill = book))+
 
 #Count the name frequency based on chapter
 name_chap_freq = whole_series%>%
-  inner_join(characters, by = c(word = "first_name"))%>%
+  inner_join(name, by = c(word = "name"))%>%
+  filter(word != "harry")%>%
   count(book, chapter, word)%>%
-  spread(word, n, fill = 0)%>%
-  
+  group_by(book, chapter)%>%
+  top_n(1)%>%
+  ungroup()%>%
+  mutate(word = reorder(word, n))
+
+ggplot(name_chap_freq, aes(x = chapter, y = n, fill = word))+
+   geom_col() +
+  facet_wrap(~book, scales = "free_x")
+
+#We can see except for harry, who is the most important character in each chapter based on the frequency of the name.
+
+word_freq = whole_series%>%
+  anti_join(name, by = c(word = "name"))%>%
+  count(book, word)%>%
+  group_by(book)%>%
+  top_n(10)%>%
+  ungroup()%>%
+  mutate(word = reorder(word, n))
+
+ggplot(word_freq, aes(x = word, y = n, fill = book))+
+  geom_col(show.legend = F)+
+  facet_wrap(~book, scales = "free")+
+  coord_flip()
 
 
 
@@ -186,7 +208,21 @@ scare_emotion = whole_series%>%
   ggplot(scare_emotion, aes(x = book, y = percent, fill = book))+
   geom_col(show.legend = F)
 
+#And we can see based on chapter, how does the sentiment become.
+  
+  score = get_sentiments("afinn")
+emotion_in_chap = whole_series%>%
+ count(book, chapter, word)%>%
+ inner_join(score, by = "word")%>%
+  group_by(book, chapter)%>%
+  mutate(contribution = sum(score*n)/sum(n))%>%
+  ungroup()
 
   
+
+ggplot(emotion_in_chap, aes(x = chapter, y = contribution, fill = book))+
+  geom_col()+
+  facet_wrap(~book, scales = "free_x")
+  
 ```
-##2. Sentiment by book
+
