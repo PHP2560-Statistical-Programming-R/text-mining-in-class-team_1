@@ -63,30 +63,37 @@ library(rebus)
 ```{r}
 # tidying the text of the first book: 
   chamber_of_secrets_tidy <- data_frame( text = chamber_of_secrets, Book = "chamber_of_secrets") %>%
+  mutate(chapter = row_number() ) %>%
     unnest_tokens(sentence, text, token = "sentences") %>%
   mutate(line = row_number())
 # tidy the second book 
 deathly_hallows_tidy <- data_frame(text = deathly_hallows , Book = "deathly_hallows" ) %>%
+    mutate(chapter = row_number() ) %>%
 unnest_tokens(sentence, text, token = "sentences") %>%
   mutate(line = row_number())
 # the Third book
 goblet_of_fire_tidy <- data_frame(text = goblet_of_fire, Book = "goblet_of_fire")%>%
+   mutate(chapter = row_number() ) %>%
 unnest_tokens(sentence, text, token = "sentences") %>%
   mutate(line = row_number())
 # the fourth book
 half_blood_prince_tidy <- data_frame(text = half_blood_prince, Book = "half_blood_prince") %>%
+  mutate(chapter = row_number() ) %>%
   unnest_tokens(sentence, text, token = "sentences") %>%
   mutate(line = row_number())
 # the fifth book 
 order_of_the_phoenix_tidy <- data_frame(text = order_of_the_phoenix, Book = "order_of_the_phoenix") %>%
+  mutate(chapter = row_number() ) %>%
  unnest_tokens(sentence, text, token = "sentences") %>%
   mutate(line = row_number())
  # the sixth book 
 philosophers_stone_tidy <- data_frame(text = philosophers_stone, Book = "philosophers_stone" ) %>%
+  mutate(chapter = row_number() ) %>%
 unnest_tokens(sentence, text, token = "sentences") %>%
   mutate(line = row_number())
 # the seventh book
 prisoner_of_azkaban_tidy <- data_frame(text = prisoner_of_azkaban, Book = "prisoner_of_azkaban") %>%
+  mutate(chapter = row_number() ) %>%
 unnest_tokens(sentence, text, token = "sentences") %>%
   mutate(line = row_number())
 
@@ -208,7 +215,7 @@ arrange(desc(n)) %>%
 # So the most imporatnt word by frequency of use is harry 
 ```
 
-most mentioned character by book graph  
+# most mentioned character by Book graph  
 ```{r}
 harrypoterclean %>%
 inner_join( characters_listjoin, by = "word" ) %>%
@@ -309,7 +316,7 @@ harrypoterclean %>%
     expand_limits(y = 0)
 ```
 
-most popular characters over time by book
+#most popular characters over time by book
 ```{r}
 harrypoterclean %>%
   inner_join(characters_listjoin) %>%
@@ -317,9 +324,21 @@ harrypoterclean %>%
    count(Book, fiftylines, word) %>% 
   arrange(Book, fiftylines, word) %>%
   group_by(Book,fiftylines) %>%
-  filter(word != "sir") %>%
+  filter(!word %in% c( "sir", "harry")) %>%
   filter(n == max(n)) %>%
-  ungroup()
+  ungroup() %>%
+   top_n(100) %>%
+  ggplot(aes(x = word , by= word, fill = word)) +
+  facet_wrap(~Book) +
+  geom_bar(show.legend = F) +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+     panel.grid.major.y  = element_blank(),
+     text = element_text(size = 7, color = "black")
+    
+  )
+  
 
   
 ```
