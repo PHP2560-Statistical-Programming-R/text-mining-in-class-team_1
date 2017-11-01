@@ -133,12 +133,17 @@ rownames(characters_list) <- seq(length=nrow(characters_list))
   
 ```
 
-Q1 what is the most important charecter based on how much is whas mentioned ? 
+Q1 what is the most important charecter based on how much is whas mentioned in each Book ? 
 ```{r}
- 
  harrypoterclean %>%
 inner_join( characters_listjoin, by = "word" ) %>%
-count(Book, word,sort= TRUE)  
+count(Book, word,sort= TRUE)  %>%
+  mutate(word = reorder(word, n)) %>%
+  top_n(50) %>%
+  ggplot(aes(x = word, y = n, fill = Book))+
+  geom_col(show.legend = F)+
+  facet_wrap(~Book, scales = "free")+
+  coord_flip()
 # not that joining and counting was done using first name only wich is not accurate. due to inability to use full name because full names not always mentiond. also family name cannot be used because it is shared between different characters. 
 ```
 Q2 what is the most scariest book based on sentiment analysis ?
@@ -158,9 +163,13 @@ harrypoterclean %>%
   arrange(desc(percent)) %>%
 
 ggplot( aes(x = Book, y = percent, fill = Book))+
-  geom_col(width = .7 ,show.legend = F ) +
+  geom_col(width = .7 ,show.legend = T ) +
   theme_minimal() + # start with a minimal them and add what we need 
   theme( text = element_text(color = "gray20"),
+         legend.position = c("top"), # position the legend to the upper left 
+         legend.direction = "horizontal", 
+         legend.justification = 0.1, # anchor point for legend position 
+         legend.text = element_text(size = 7, color = "black"),
          axis.text = element_text(face = "italic"), 
          axis.text.x = element_text(size = 7),
          axis.line = element_line(color = "gray50", size = 0.5), 
@@ -175,9 +184,27 @@ ggplot( aes(x = Book, y = percent, fill = Book))+
 
 ```{r}
 harrypoterclean %>%
-  group_by(word) %>%
-  count( word, sort = TRUE) %>%
-arrange(desc(n))
+  count(Book, word, sort = TRUE) %>%
+  group_by(Book) %>%
+  top_n(10) %>%
+arrange(desc(n)) %>%
+  ungroup() %>%
+  ggplot( aes(x = word, y = n, fill = Book))+
+  geom_col(show.legend = F)+
+  facet_wrap(~Book, scales = "free")+
+  coord_flip() +
+   theme_minimal() + # start with a minimal them and add what we need 
+  theme( text = element_text(color = "gray20"),
+         axis.text = element_text(face = "italic"), 
+         axis.text.x = element_text(size = 7),
+          axis.ticks.x = element_blank(),
+         axis.line = element_line(color = "gray50", size = 0.5), 
+         axis.line.y   = element_blank(), 
+         panel.grid.major.y = element_blank(),
+         panel.grid.minor.x = element_line(color = "gray50", size = .5),
+         panel.grid.major.x = element_line(color = "gray50", size = .5)
+  )
+  
 # So the most imporatnt word by frequency of use is harry 
 ```
 
