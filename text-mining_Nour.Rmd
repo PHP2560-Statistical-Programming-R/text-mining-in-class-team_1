@@ -302,7 +302,7 @@ harrypoterclean %>%
          panel.grid.major.x = element_line(color = "gray50", size = .3)
   )
 ```
-frequency of harry mentioning over the books: 
+# frequency of harry mentioning over the books: 
 ```{r}
 harrypoterclean %>%
   filter(word == "harry") %>%
@@ -316,7 +316,7 @@ harrypoterclean %>%
     expand_limits(y = 0)
 ```
 
-#most popular characters over time by book
+#most popular characters over time by book Question by Nour 
 ```{r}
 harrypoterclean %>%
   inner_join(characters_listjoin) %>%
