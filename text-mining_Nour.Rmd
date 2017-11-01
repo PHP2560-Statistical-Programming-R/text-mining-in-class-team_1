@@ -158,9 +158,20 @@ harrypoterclean %>%
   arrange(desc(percent)) %>%
 
 ggplot( aes(x = Book, y = percent, fill = Book))+
-  geom_col(show.legend = F)
+  geom_col(width = .7 ,show.legend = F ) +
+  theme_minimal() + # start with a minimal them and add what we need 
+  theme( text = element_text(color = "gray20"),
+         axis.text = element_text(face = "italic"), 
+         axis.text.x = element_text(size = 7),
+         axis.line = element_line(color = "gray50", size = 0.5), 
+         axis.line.y = element_blank(), 
+         panel.grid.major = element_line(color = "gray50", size = .5),
+         panel.grid.major.x = element_blank(),
+         panel.grid.minor = element_line(color = "gray50", size = .5)
+         )
   
 ```
+
 
 ```{r}
 harrypoterclean %>%
