@@ -47,6 +47,17 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 and the sixth question is unique for every student 
 # setup
 ```{r}
+# function to check for required packages by:https://gist.github.com/smithdanielle/9913897
+
+check.packages <- function(pkg){
+    new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+    if (length(new.pkg)) 
+        install.packages(new.pkg, dependencies = TRUE)
+    sapply(pkg, require, character.only = TRUE)
+}
+packages<-c("ggplot2", "dplyr", "stringi", "harrypotter", "tidytext", "rebus")
+check.packages(packages)
+
     if (packageVersion("devtools") < 1.6) {
   install.packages("devtools")}
 
@@ -243,7 +254,7 @@ inner_join( characters_listjoin, by = "word" ) %>%
   )
 ```
 
-how harry mentioned changed by Book graph 
+#how harry mentioned changed by Book graph 
 ```{r}
 harrypoterclean %>%
   inner_join(characters_listjoin, by = "word") %>%
@@ -270,7 +281,7 @@ ggplot(aes(x = Book, y = n, fill = Book)) +
   
 ```
 
-sentiment by Book 
+#sentiment by Book 
 ```{r}
 harrypoterclean %>%
   # filter uut confusing words 
@@ -336,7 +347,6 @@ harrypoterclean %>%
   theme(
      panel.grid.major.y  = element_blank(),
      text = element_text(size = 7, color = "black")
-    
   )
   
 
