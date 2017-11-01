@@ -302,7 +302,7 @@ harrypoterclean %>%
   mutate( fiftylines=  floor(line / 50)) %>%
   count(Book, fiftylines, word) %>%
   #making graph 
-     ggplot(aes(fiftylines, n)) +
+     ggplot(aes(fiftylines, n, color = Book)) +
     # Make facets by Book
     facet_wrap(~Book) +
     geom_line(size = .1, show.legend = FALSE) +
@@ -320,4 +320,6 @@ harrypoterclean %>%
   filter(word != "sir") %>%
   filter(n == max(n)) %>%
   ungroup()
+# how should i graph this *-* 
+  
 ```
