@@ -1,0 +1,114 @@
+---
+title: "ggplot"
+author: "NAudi"
+date: "October 27, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(ggrepel)
+dat <- read.csv("https://drive.google.com/uc?export=download&id=0B8CsRLdwqzbzUDJLa1owSVduLTA")
+```
+
+```{r}
+# call data then asthetics are x, y and how coloring works
+pc1 <- ggplot(data = dat, aes(x = CPI, y = HDI, color =  Region))
+# geom point 
+pc2 <- pc1 + 
+  geom_smooth( aes(group = 1),
+               method = "lm" ,
+               formula = y~log(x),
+               se = FALSE, 
+               color = "red") 
+  
+# adding empty circle shape with thick line 
+pc3 <- pc2 + geom_point(shape = 1, size = 4) +
+  geom_point(shape = 1, size = 4.1) +
+  geom_point(shape = 1, size = 4.2) +
+  geom_point(shape = 1, size = 3.9) +
+  geom_point(shape = 1, size = 3.8) +
+  geom_point(shape = 1, size = 3.7) +
+  geom_point(shape = 1, size = 4.3)
+# adding lables 
+pointolabel <-  dat %>%
+  filter( Region == "MENA")
+# label layer
+pc4 <- pc3 + geom_text_repel(aes(label = Country),
+                    color = "gray20", 
+                    data = subset(dat, Country %in% as.vector(pointolabel$Country), 
+                                  force = 10))
+# change region label and order 
+dat$Region <- factor(dat$Region,
+                     levels = c( "EU W. Europe" ,
+                                 "Americas",
+                                 "Asia Pacific" ,
+                                 "East EU Cemt Asia" ,
+                                 "MENA", 
+                                 "SSA"), 
+                     labels = c( "OECD",
+                                 "Americas",
+                     "Asia &\nOcianosia",
+                     "central &\nEstern Europe",
+                     "Middle East &\nNorth Africa",
+                     "Sub Saharan &\nAfrica"))
+# updatin labels data 
+pc4$data <- dat
+
+```
+```{r}
+# Add title and format axis 
+library(grid)
+pc5 <- pc4 +
+  scale_x_continuous(name = " Corruption Percentage Index, 2011 ( 10 = least corruption)", 
+                     limits = c(0.9, 10.5), 
+                     breaks = 1:10) +
+  scale_y_continuous(name = "Human Development Index, 2011 (1 = Best)", 
+                     limits = c(0.2, 1.0), 
+                     breaks = seq(0.2, 1.0, by = 0.1)) +
+  scale_color_manual(name = "", 
+                     values = c("#24576D", 
+                                "#099DD7", 
+                                "#28AADC", 
+                                "#248E84", 
+                                "#F2583F", 
+                                "#96503F")) +
+  ggtitle("Corruption and Human Development")
+pc5
+```
+```{r}
+# Final changes 
+pc6 <- pc5 +
+  theme_minimal() + # start with a minimal them and add what we need 
+  theme( text = element_text(color = "gray20"),
+         legend.position = c("top"), # position the legend to the upper left 
+         legend.direction = "horizontal", 
+         legend.justification = 0.1, # anchor point for legend position 
+         legend.text = element_text(size = 11, color = "gray10"), 
+         axis.text = element_text(face = "italic"), 
+         axis.title.x = element_text(vjust = -10), # move the title away from axis 
+         axis.title.y = element_text(vjust = 2), #Move awya from axis
+         axis.ticks.y = element_blank() ,# remove element y 
+         axis.line = element_line(color = "gray50", size = 0.5), 
+         axis.line.y = element_blank(), 
+         panel.grid.major = element_line(color = "gray50", size = 0.5),
+         panel.grid.major.x = element_blank()
+         )
+pc6
+```
+```{r}
+# Addign R2 
+mR2 <- summary(lm(HDI ~log(CPI), data = dat))$r.squared 
+library(grid)
+pc6 +
+  grid.text("Sources : transperecy International; UN Human development Report ", 
+            x = .01, y = .01, 
+            just =  "left", 
+            draw = TRUE, gp = gpar(fontsize = 7 , color = "gray"))
+grid.segments() # to be conitnued 
+```
+
