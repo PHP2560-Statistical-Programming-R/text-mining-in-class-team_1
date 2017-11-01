@@ -348,7 +348,4 @@ harrypoterclean %>%
      panel.grid.major.y  = element_blank(),
      text = element_text(size = 7, color = "black")
   )
-  
-
-  
 ```
