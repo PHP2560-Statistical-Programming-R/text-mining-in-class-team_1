@@ -47,12 +47,11 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 
 ## Package installation
 ```{r, message=FALSE, warning=FALSE, eval=FALSE}
-#install.packages("janeaustenr")  # for book by janeaustenr
+
 #install.packages("gutenbergr")  # for free ebooks
 #install.packages("dplyr")  # for data manipulation
 #install.packages("stringr")  # for string manupulation
 #install.packages("tidytext")  # for text mining
-#install.packages("SnowballC") # for text stemming
 #install.packages("ggplot2")  # for text stemming
 #install.packages("wordcloud") # word-cloud generator 
 #install.packages("RColorBrewer") # color palettes
@@ -72,7 +71,6 @@ devtools::install_github("bradleyboehmke/harrypotter")
 
 ## Loading required packages
 ```{r message=FALSE, warning=FALSE}
-library(janeaustenr)
 library(gutenbergr)
 library(dplyr)
 library(stringr)
@@ -88,7 +86,7 @@ library(igraph)
 library(ggraph)
 library(rebus)
 library(topicmodels)
-library(DT)          #Datatable
+
 
 ```
 ## Reusable functions
@@ -185,28 +183,22 @@ harrypotter_clean_tokens <- harrypotter_tokenized %>%
 ###Q1. what is the most important charecter based on how much it was mentioned 
 ```{r  message=FALSE, warning=FALSE}
 
-dt<-harrypotter_clean_tokens %>%
+harrypotter_clean_tokens %>%
   mutate(id = R.utils::capitalize(word)) %>%
   inner_join(harrypotter_characters, by =c(id = "FirstName") ) %>%
-  count(FullName,sort= TRUE)
-
-dt%>%
-  top_n(30) %>%
+  count(FullName,sort= TRUE)  %>%
+  top_n(20) %>%
   ggplot() +
-  geom_bar(mapping = aes(x = reorder(FullName, n), fill=FullName,
-                         y = n),alpha = 0.8, stat = "identity") +
-  labs(x = NULL, y = "# Appearance") +
-  coord_flip() + ggtitle("Popularity Of Characters")+
-  theme(
-    legend.position ="none")
-
-datatable(dt)
+    geom_bar(mapping = aes(x = reorder(FullName, n), fill=FullName,
+                           y = n),alpha = 0.8, stat = "identity") +
+    labs(x = NULL, y = "Count") +
+    coord_flip() + ggtitle("Harry Potter Top 20 Characters")+
+    theme(legend.position="none")
 ```
 
 ###Q2. what is the most scariest book based on sentiment analysis ?
 
 ```{r  message=FALSE, warning=FALSE}
-
 hp_negative_sentiment<-harrypotter_clean_tokens%>%
   inner_join(get_sentiments("bing"), by = "word") %>% # join sentiment
   group_by(Title)%>% # make each row  abook
@@ -214,7 +206,7 @@ hp_negative_sentiment<-harrypotter_clean_tokens%>%
   filter(sentiment=="negative")  #filter by negative sentiment
 
 
-
+head(hp_negative_sentiment)
 #plot the graph of harrypotter_clean_tokens
 hp_negative_sentiment %>% 
   ggplot(aes(Title,n, fill=Title)) +
@@ -224,9 +216,6 @@ hp_negative_sentiment %>%
   coord_flip()
 # Using bing lexicon, Harry Potter and the Order of the Phoenix is the scariest with about 8k negative sentiments
 
-# supporting data table
-datatable(hp_negative_sentiment)
-
 ```
 
 ###Q3. What the top ten used words in exception to stop words ?
@@ -234,15 +223,14 @@ datatable(hp_negative_sentiment)
 word_count <- harrypotter_clean_tokens %>% 
   count(word, sort = TRUE) %>% 
   mutate(word = reorder(word, n))
-
-# supporting data table
-datatable(word_count)
+head(word_count)
 ```
 
 ```{r}
 # Visualization of the most common words
 word_count_gt_600 <- word_count %>%
   filter(n > 600)
+
 
 
 # plot using word cloud
@@ -300,10 +288,9 @@ ggplot(df)  +
   geom_text(aes(label=sales, x=Title, y=0.97*sales), colour="black")+
   scale_y_continuous(sec.axis = sec_axis(~./max(df$sales)))+
   labs(x = "Book", y = "Sales/Popularity")+
-  theme_minimal()+
   theme(
-    axis.text.x=element_blank(),
-    axis.ticks.x=element_blank())
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
 # looks like sentimental score is proportioal to the sale/Popularity. But there could be a confounding variable existing or sentimental score is just temporal
 ```
 
@@ -370,6 +357,7 @@ hp_negated_words  <- hp_bigrams_separated %>%
   count(word2, score, sort = TRUE) %>%
   ungroup()
 
+head(hp_negated_words)
 
 hp_negated_words %>%
   mutate(contribution = nn * score) %>%
@@ -518,11 +506,12 @@ harrypotter_clean_tokens %>%
   count( Chapter, FullName,word, sort = TRUE) %>%
   filter(word %in% as.vector(top_n_characters$word))%>% 
   #plot the graph
-  ggplot(aes(Chapter, n, color=word)) +
+  ggplot(aes(Chapter, n)) +
   geom_point() +
   geom_smooth() +
   facet_wrap(~ FullName, scales = "free_y") +
-  ylab("Frequency of Character")
+  scale_y_continuous(labels = scales::percent_format()) +
+  ylab("% frequency of Character")
 ```
 
 ###Q11. What are the top 6 topics discussed in harry potter
@@ -575,5 +564,5 @@ tidy(chapters_lda, matrix = "gamma") %>%
 
 
 # Acknowledgments
-Question Template from http://tidytextmining.com 
+Template from “Tidy Text Mining with R”: http://tidytextmining.com 
 
