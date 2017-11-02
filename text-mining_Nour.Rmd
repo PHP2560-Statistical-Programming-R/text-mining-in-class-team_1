@@ -2,6 +2,15 @@
 title: "Text Analyis"
 output: github_document
 ---
+questions for analysis: 
+1. what is the most important charecter based on how much is whas mentioned ? 
+2. what is the most scariest book based on sentiment analysis ?
+3. what the top ten used words in exception to stop words ?
+4. sentiments by books 
+5. sentiment by popularity based on "https://www.theguardian.com/news/datablog/2012/aug/09/best-selling-books-all-time-fifty-shades-grey-compare" "
+and the sixth question is unique for every student 
+
+
 
 # Your mission
 
@@ -20,8 +29,14 @@ Do the above. Can't think of a data source?
 - `AssociatedPress` from the `topicmodels` package
 - `NYTimes` or `USCongress` from the `RTextTools` package
 - Harry Potter Complete 7 Books text
+```{r} 
+
+    if (packageVersion("devtools") < 1.6) {
+  install.packages("devtools")}
 
 
+devtools::install_github("bradleyboehmke/harrypotter")
+    ```
 - [State of the Union speeches](https://pradeepadhokshaja.wordpress.com/2017/03/31/scraping-the-web-for-presdential-inaugural-addresses-using-rvest/)
 - Scrape tweets using [`twitteR`](https://www.credera.com/blog/business-intelligence/twitter-analytics-using-r-part-1-extract-tweets/)
 
@@ -37,29 +52,14 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 - Ask questions about the data
 - Answer these questions with the data using tables and graphics
 - Each group member must have their own unique question that they code the answer for. 
-
-#Team one group questions for analysis: 
-1. what is the most important charecter based on how much is whas mentioned ? 
-2. what is the most scariest book based on sentiment analysis ?
-3. what the top ten used words in exception to stop words ?
-4. sentiments by books 
-5. sentiment by popularity based on "https://www.theguardian.com/news/datablog/2012/aug/09/best-selling-books-all-time-fifty-shades-grey-compare" "
-and the sixth question is unique for every student 
-# setup
 ```{r}
-    if (packageVersion("devtools") < 1.6) {
-  install.packages("devtools")}
-
-
-devtools::install_github("bradleyboehmke/harrypotter")
-
 library(dplyr)
 library(stringi)
 library(harrypotter)
 library(tidytext)
 library(rebus)
 ```
-# data importing and cleaning 
+
 ```{r}
 # tidying the text of the first book: 
   chamber_of_secrets_tidy <- data_frame( text = chamber_of_secrets, Book = "chamber_of_secrets") %>%
@@ -89,23 +89,27 @@ unnest_tokens(sentence, text, token = "sentences") %>%
 prisoner_of_azkaban_tidy <- data_frame(text = prisoner_of_azkaban, Book = "prisoner_of_azkaban") %>%
 unnest_tokens(sentence, text, token = "sentences") %>%
   mutate(line = row_number())
+```
 
+```{r}
 # making one dataframe for all books 
 harrypoter <- rbind(chamber_of_secrets_tidy, deathly_hallows_tidy, goblet_of_fire_tidy, half_blood_prince_tidy, order_of_the_phoenix_tidy, philosophers_stone_tidy, prisoner_of_azkaban_tidy) 
 harrypoter
-
+```
+```{r}
 #remove stop words that are unncessary for analysis like a, an , as ... etc. 
 harrypoterclean <- harrypoter %>%
   unnest_tokens(word, sentence) %>%
   anti_join(stop_words)
 
 ```
-# chracters list 
+
 ```{r}
 # making list of  the whole series characters: 
 # after making a txt file from "https://en.wikipedia.org/wiki/List_of_Harry_Potter_characters" then importing to R 
  characters_raw <- readLines("characters_ weki.txt")
-
+```
+```{r}
 # extracting names only based on pattern of two names start with an upper case and space between them.
 # used capture to get first and last names seperatly into the data frame. 
 characters_raw2 <- str_match( characters_raw, capture (UPPER %R% one_or_more(WRD)) %R% SPC %R% capture(UPPER %R% one_or_more(WRD)))
@@ -133,78 +137,31 @@ rownames(characters_list) <- seq(length=nrow(characters_list))
   
 ```
 
-Q1 what is the most important charecter based on how much is whas mentioned in each Book ? 
+Q1 what is the most important charecter based on how much is whas mentioned ? 
 ```{r}
+ 
  harrypoterclean %>%
 inner_join( characters_listjoin, by = "word" ) %>%
-count(Book, word,sort= TRUE)  %>%
-  mutate(word = reorder(word, n)) %>%
-  top_n(50) %>%
-  ggplot(aes(x = word, y = n, fill = Book))+
-  geom_col(show.legend = F)+
-  facet_wrap(~Book, scales = "free")+
-  coord_flip()
-# not that joining and counting was done using first name only wich is not accurate. due to inability to use full name because full names not always mentiond. also family name cannot be used because it is shared between different characters. 
+count(Book, word,sort= TRUE)  
+# not that joining and counting was done using first name only wich is not accurate. due to inability to use full name because  full names not always mentiond. also family name cannot be used becaue it is shared between many characters. 
 ```
 Q2 what is the most scariest book based on sentiment analysis ?
 ```{r}
 harrypoterclean %>%
-  count(Book) %>%
-  rename(total_word = n) %>%
-  ungroup() %>%
-  left_join(harrypoterclean, "Book") %>%
-  # joining with sentiment "nrc"
-   inner_join(get_sentiments("nrc")) %>%
-  count( Book,total_word, sentiment , sort = TRUE) %>%
-  ungroup() %>%
-  mutate(percent = n/total_word)%>%
+  # joining with sentiment "bing"
+  inner_join(get_sentiments("bing")) %>%
+  group_by(Book) %>%
+  count( Book, sentiment , sort = TRUE) %>%
   # filtering only negative sentiments
-  filter(sentiment == "fear") %>%
-  arrange(desc(percent)) %>%
-
-ggplot( aes(x = Book, y = percent, fill = Book))+
-  geom_col(width = .7 ,show.legend = T ) +
-  theme_minimal() + # start with a minimal them and add what we need 
-  theme( text = element_text(color = "gray20"),
-         legend.position = c("top"), # position the legend to the upper left 
-         legend.direction = "horizontal", 
-         legend.justification = 0.1, # anchor point for legend position 
-         legend.text = element_text(size = 7, color = "black"),
-         axis.text = element_text(face = "italic"), 
-         axis.text.x = element_text(size = 7),
-         axis.line = element_line(color = "gray50", size = 0.5), 
-         axis.line.y = element_blank(), 
-         panel.grid.major = element_line(color = "gray50", size = .5),
-         panel.grid.major.x = element_blank(),
-         panel.grid.minor = element_line(color = "gray50", size = .5)
-         )
-  
+  filter(sentiment == "negative")
+  # the most negative book is order_of_the_phoenix with 8774 negative word. 
 ```
-
 
 ```{r}
 harrypoterclean %>%
-  count(Book, word, sort = TRUE) %>%
-  group_by(Book) %>%
-  top_n(10) %>%
-arrange(desc(n)) %>%
-  ungroup() %>%
-  ggplot( aes(x = word, y = n, fill = Book))+
-  geom_col(show.legend = F)+
-  facet_wrap(~Book, scales = "free")+
-  coord_flip() +
-   theme_minimal() + # start with a minimal them and add what we need 
-  theme( text = element_text(color = "gray20"),
-         axis.text = element_text(face = "italic"), 
-         axis.text.x = element_text(size = 7),
-          axis.ticks.x = element_blank(),
-         axis.line = element_line(color = "gray50", size = 0.5), 
-         axis.line.y   = element_blank(), 
-         panel.grid.major.y = element_blank(),
-         panel.grid.minor.x = element_line(color = "gray50", size = .5),
-         panel.grid.major.x = element_line(color = "gray50", size = .5)
-  )
-  
+  group_by(word) %>%
+  count( word, sort = TRUE) %>%
+arrange(desc(n))
 # So the most imporatnt word by frequency of use is harry 
 ```
 
@@ -222,18 +179,8 @@ inner_join( characters_listjoin, by = "word" ) %>%
     geom_col(show.legend = FALSE) +
     scale_x_discrete(labels = function(x) gsub("__.+$", "", x)) +
     facet_wrap(~ Book, nrow = 2, scales = "free") +
-    coord_flip() +
-   theme_minimal() + # start with a minimal them and add what we need 
-  theme( text = element_text(color = "gray20"),
-         axis.text = element_text(face = "italic"), 
-         axis.text.x = element_text(size = 7),
-          axis.ticks.x = element_blank(),
-         axis.line = element_line(color = "gray50", size = 0.5), 
-         axis.line.y   = element_blank(), 
-         panel.grid.major.y = element_blank(),
-         panel.grid.minor.x = element_line(color = "gray50", size = .5),
-         panel.grid.major.x = element_line(color = "gray50", size = .5)
-  )
+    coord_flip()
+  
 ```
 
 how harry mentioned changed by Book graph 
@@ -241,26 +188,8 @@ how harry mentioned changed by Book graph
 harrypoterclean %>%
   inner_join(characters_listjoin, by = "word") %>%
   count(Book, word) %>%
-  filter(word == "harry") %>%
+  filter(word == "harry")
 # plotting graph by book 
-ggplot(aes(x = Book, y = n, fill = Book)) +
-  geom_col(width = .7 ,show.legend = T ) +
-  theme_minimal() + # start with a minimal them and add what we need 
-  theme( text = element_text(color = "gray20"),
-         legend.position = c("top"), # position the legend to the upper left 
-         legend.direction = "horizontal", 
-         legend.justification = 0.1, # anchor point for legend position 
-         legend.text = element_text(size = 7, color = "black"),
-         axis.text = element_text(face = "italic"), 
-         axis.text.x = element_text(size = 7),
-         axis.line = element_line(color = "gray50", size = 0.5), 
-         axis.line.y = element_blank(), 
-         panel.grid.major = element_line(color = "gray50", size = .5),
-         panel.grid.major.x = element_blank(),
-         panel.grid.minor = element_line(color = "gray50", size = .5)
-         )
-  
-  
 ```
 
 sentiment by Book 
@@ -282,18 +211,7 @@ harrypoterclean %>%
     geom_col(show.legend = FALSE) +
     scale_x_discrete(labels = function(x) gsub("__.+$", "", x)) +
     facet_wrap(~Book, nrow = 2, scales = "free") +
-    coord_flip()  +
-   theme_minimal() + # start with a minimal them and add what we need 
-  theme( text = element_text(color = "gray20"),
-         axis.text = element_text(face = "italic"), 
-         axis.text.x = element_text(size = 7),
-          axis.ticks.x = element_blank(),
-         axis.line = element_line(color = "gray50", size = 0.5), 
-         axis.line.y   = element_blank(), 
-         panel.grid.major.y = element_blank(),
-         panel.grid.minor.x = element_line(color = "gray50", size = .3),
-         panel.grid.major.x = element_line(color = "gray50", size = .3)
-  )
+    coord_flip()
 ```
 frequency of harry mentioning over the books: 
 ```{r}
@@ -302,7 +220,7 @@ harrypoterclean %>%
   mutate( fiftylines=  floor(line / 50)) %>%
   count(Book, fiftylines, word) %>%
   #making graph 
-     ggplot(aes(fiftylines, n, color = Book)) +
+     ggplot(aes(fiftylines, n)) +
     # Make facets by Book
     facet_wrap(~Book) +
     geom_line(size = .1, show.legend = FALSE) +
@@ -320,6 +238,4 @@ harrypoterclean %>%
   filter(word != "sir") %>%
   filter(n == max(n)) %>%
   ungroup()
-
-  
 ```

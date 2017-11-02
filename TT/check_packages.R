@@ -8,3 +8,4 @@ check_packages = function(names)
     library(name, character.only=TRUE)
   }
 }
+# by https://github.com/Sullivanstatistics/Dunkin_Scrape/blob/master/check_packages.R

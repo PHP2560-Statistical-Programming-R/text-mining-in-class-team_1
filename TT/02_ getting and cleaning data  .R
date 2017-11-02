@@ -1,0 +1,7 @@
+book1 <- data_frame(Title="Harry Potter and the Philosopher's Stone", text=philosophers_stone)
+book2 <- data_frame(Title="Harry Potter and the Chamber of Secrets", text=chamber_of_secrets)
+book3 <- data_frame(Title="Harry Potter and the Prisoner of Azkaban", text=prisoner_of_azkaban)
+book4 <- data_frame(Title="Harry Potter and the Goblet of Fire", text=goblet_of_fire)
+book5 <- data_frame(Title="Harry Potter and the Order of the Phoenix", text=order_of_the_phoenix)
+book6 <- data_frame(Title="Harry Potter and the Half-blood Prince", text=half_blood_prince)
+book7 <- data_frame(Title="Harry Potter and the Deathly Hallows", text=deathly_hallows)

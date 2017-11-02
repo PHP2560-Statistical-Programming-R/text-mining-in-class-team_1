@@ -56,7 +56,7 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 # And the sixth question is unique for every student.
 ```
 
-#0. Package load and environment setting.
+# Preperation
 ```{r}
 
     if (packageVersion("devtools") < 1.6) {
@@ -75,58 +75,24 @@ library(dplyr)
 library(stringr)
 library(stringi)
 library(ggplot2)
-library(tidyverse)
 ```
 
 
 
 #1. Preperation
-##1.1 Load the 7 novels in harry potter series. Add chapter, sentence and word column for further analysis. Remove stop_words as text_cleaning. Save these books in variables.
 ```{r}
-#Function that adds columns called chapter, sentence, word and title, where word contain individual words in the novel, while sentence and chapter refers to the correpsonding chapter and sentence that the word appears, and book referes to the name of the book.
-
-
-
-# Fetch Book metadata from theGuardian.com e.g publisher, ranking, sales, author e.t.c 
-bookMetadata <- as_tibble(read.csv("https://docs.google.com/spreadsheets/d/1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA/export?format=csv&id=1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA&gid=0"))
-
-harry_potter = "harry potter and the "
-bookMetadata$Title  = bookMetadata$Title%>%
-  str_to_lower()%>%
-  str_replace_all(pattern = or(harry_potter, "'", ":children's edition"), "")%>%
-  str_replace_all(pattern = or(" ", "-"), "_")
-
-bookMetadata$Volume.Sales = bookMetadata$Volume.Sales%>%
-  str_replace_all(pattern = ",", "")%>%
-  as.numeric()
-
-
-
-
 
 book_tidy = function(name){
-#Add chapter
-  pattern = one_or_more(one_or_more(UPPER) %R% optional(SPC) %R% optional("-"))
-  pattern_chapter = capture(pattern) %R% SPC %R% SPC
-  chapter_name = str_extract(get(name), pattern =pattern_chapter)
-  chapter = tibble(text = get(name), chapter_name = chapter_name)%>%
+  text = tibble(text = get(name))%>%
     mutate(chapter = row_number())
-  
-
-
-#Add sentence
-  sentence = chapter%>%
-    unnest_tokens(sentence, text, token = "sentences")%>%
-    mutate(sentences = row_number())
-#Add word  
-  df = sentence %>%
-    unnest_tokens(word, sentence)
-#Add book
-  title = tibble(book = name)
+  df = text %>%
+    unnest_tokens(word, text)
+  title = data.frame(name)
+  names(title) = "book"
   return(cbind(title, df))
 }
 
-#The vector "names" saves the book names of all the 7 books.
+
 names = c("philosophers_stone",
          "chamber_of_secrets",
          "prisoner_of_azkaban",
@@ -137,109 +103,56 @@ names = c("philosophers_stone",
 
 
 
-#Save 7 books in two ways for further analysis.
-## First, save 7 books individually in a list called "harrypotter".
-## Second, save 7 books together in a tibble called "whole_series".
-
-#Define the variables
+#
 harrypotter = rep(list(tibble()), 7)
 whole_series = tibble()
 
-#Save 7 books in a list
+#Save 7 books in a list, each in a tibble and remove the stop words.
 for(i in 1:7){
-  harrypotter[[i]] = book_tidy(names[i])%>%
-    arrange(chapter, sentences)%>%
-    anti_join(stop_words)
+  harrypotter[[i]] = book_tidy(names[i]) %>%
+                     anti_join(stop_words)
+ 
 }
 
-#Save 7 books in a tibble
 for(i in 1:length(names)){
   whole_series = rbind(whole_series, book_tidy(names[i]))%>%
     anti_join(stop_words, by = "word")
 }
-```
-
-##1.2 Find the names of main characters and save them. The names of main characters were found in website 
-```{r}
-#"https://en.wikipedia.org/wiki/List_of_Harry_Potter_characters", the content is simply copy and paste into local document called "characters.txt".
-
-#Read txt.
-characters_txt = readLines("harry_potter_characters.txt")
-#Define pattern
-pattern = "\t" %R% capture(UPPER %R% one_or_more(WRD)) %R% SPC %R% capture(UPPER %R% one_or_more(WRD))
-#Extract the names in the txt.
-characters = str_match(characters_txt, pattern = pattern)%>%
-  as_tibble()%>%
-  setNames(c("name", "first_name", "last_name"))%>%
-  #Remove NA
-  filter(!is.na(name))
-
-#Save both first and second name in a vector
-name = tibble(name = unique(c(characters$first_name, characters$last_name)))%>%
-  #Add a column called lower, which is the names in lower case.
-  mutate(lower = tolower(name))
-```
 
 
-#2. Frequency analysis
-```{r}
-#Look for the ten most mentioned names in each book.
-name_freq = whole_series%>%
-  inner_join(name, by = c(word = "lower"))%>%
-  count(book, word)%>%
+#Count the words
+word_frequency = whole_series %>%
+  
+                  count(book, word)%>%
   group_by(book)%>%
   top_n(10)%>%
   arrange(desc(n))%>%
   ungroup()%>%
+  
   mutate(word = reorder(word, n))
  
 
-ggplot(name_freq, aes(x = word, y = n, fill = book))+
+ggplot(word_frequency, aes(x = word, y = n, fill = book))+
    geom_col(show.legend = FALSE) +
   facet_wrap(~book, scales = "free") +  
   coord_flip()
- 
+
 #As we can see in the plot, Harry is the most important character in the novel. Also the second and third important character is Ron and Hermione.
+character_txt = readLines("1_characters.txt")
+pattern = "\t" %R% optional(or("Professor ", "")) %R% capture(one_or_more(WRD))
+characters = str_match(character_txt ,pattern = pattern)
+remove_NA = characters[,2][!is.na(characters[,2])]
+name_of_character = tibble(word = str_to_lower(remove_NA))
 
-#Look for name frequency (except for Harry Potter) based on chapters.
-name_chap_freq = whole_series%>%
-  inner_join(name, by = c(word = "name"))%>%
-  filter(word != "harry")%>%
-  count(book, chapter, word)%>%
-  group_by(book, chapter)%>%
-  top_n(1)%>%
-  ungroup()%>%
-  mutate(word = reorder(word, n))
 
-ggplot(name_chap_freq, aes(x = chapter, y = n, fill = word))+
-   geom_col() +
-  facet_wrap(~book, scales = "free_x")
+  
 
-#We can see except for harry, who is the most important character in each chapter based on the frequency of the name.
+ 
 
-#Look for words frequency for words that are not names based on each book.
-word_freq = whole_series%>%
-  anti_join(name, by = c(word = "name"))%>%
-  count(book, word)%>%
-  group_by(book)%>%
-  top_n(10)%>%
-  ungroup()%>%
-  mutate(word = reorder(word, n))
-
-ggplot(word_freq, aes(x = word, y = n, fill = book))+
-  geom_col(show.legend = F)+
-  facet_wrap(~book, scales = "free")+
-  coord_flip()
 ```
 
-
-
-
-
-
-
-#2. Sentiment analysis
-##2.1 The scarest book
+# Sentiment analysis
+##1. The scarest book
 ```{r}
 emotion = get_sentiments("nrc")
 unique(emotion[,2])
@@ -262,47 +175,7 @@ scare_emotion = whole_series%>%
   ggplot(scare_emotion, aes(x = book, y = percent, fill = book))+
   geom_col(show.legend = F)
 
-#See how sentiment changes through chapter.
-  
-  score = get_sentiments("afinn")
-emotion_in_chap = whole_series%>%
- count(book, chapter, word)%>%
- inner_join(score, by = "word")%>%
-  group_by(book, chapter)%>%
-  mutate(contribution = sum(score*n)/sum(n))%>%
-  ungroup()
 
-  
-
-ggplot(emotion_in_chap, aes(x = chapter, y = contribution, fill = book))+
-  geom_col()+
-  facet_wrap(~book, scales = "free_x")
   
 ```
-##2.2 Sentiment by popularity
-```{r}
-sentiment_by_popularity = whole_series%>%
-  count(book, chapter, word)%>%
-  inner_join(score, by = "word")%>%
-  inner_join(bookMetadata, by = c(book = "Title"))%>%
-  rename(sales = Volume.Sales)%>%
-  group_by(book, sales)%>%
-  summarise(contribution = sum(n*score))
-
-ggplot(sentiment_by_popularity, aes(x = book, y = sales, fill = contribution), stat = "identity")+
-  geom_col()
-
-date_pattern = ", " %R% capture(UPPER %R% one_or_more(WRD)) %R% SPC %R% capture(one_or_more(DGT)) %R% "," %R% SPC %R% capture(one_or_more(DGT))
-bookMetadata = bookMetadata%>%
-  mutate(year = str_match(bookMetadata$Publication.Date, pattern = date_pattern)[,4])
-
-dates2 <- c("20jan07","06sep01","6august05","6august2005","20june1999") 
-ndates2 <- as.Date(dates2, "%d%b%y"); ndates2
-as.Date('April 26, 2001', format='%B %d, %Y')
-
-
-```
-
-
-
-
+##2. Sentiment by book
