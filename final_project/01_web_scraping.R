@@ -18,7 +18,7 @@ get_harry_potter_characters <- function(){
     filter(!FirstName%in%custom_stop_words) %>% # clean data by first name
     filter(!LastName%in%custom_stop_words) %>% # clean data by last name 
     unique() 
-  
+  save(bookMetadata, file = "final_project/data/bookMetadata.rda")
   save(harrypotter_characters, file="final_project/data/harrypotter_characters.rda")
   
 }
