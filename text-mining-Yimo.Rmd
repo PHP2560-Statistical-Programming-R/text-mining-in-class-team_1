@@ -76,6 +76,7 @@ library(stringr)
 library(stringi)
 library(ggplot2)
 library(tidyverse)
+library(scales)
 ```
 
 
@@ -90,21 +91,28 @@ library(tidyverse)
 # Fetch Book metadata from theGuardian.com e.g publisher, ranking, sales, author e.t.c 
 bookMetadata <- as_tibble(read.csv("https://docs.google.com/spreadsheets/d/1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA/export?format=csv&id=1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA&gid=0"))
 
-harry_potter = "harry potter and the "
+harry_potter = "Harry Potter and the "
 bookMetadata$Title  = bookMetadata$Title%>%
-  str_to_lower()%>%
-  str_replace_all(pattern = or(harry_potter, "'", ":children's edition"), "")%>%
-  str_replace_all(pattern = or(" ", "-"), "_")
+  str_replace_all(pattern = or(harry_potter, "'"), "")%>%
+  str_replace_all(pattern = "-", " ")%>%
+  str_to_title()
 
 bookMetadata$Volume.Sales = bookMetadata$Volume.Sales%>%
   str_replace_all(pattern = ",", "")%>%
   as.numeric()
 
 
+bookMetadata$Volume.Sales[bookMetadata$Title == "Half Blood Prince"] = bookMetadata$Volume.Sales[bookMetadata$Title == "Half Blood Prince"] + bookMetadata$Volume.Sales[bookMetadata$Title == "Half Blood Prince:childrens Edition"]
+
+
+date_pattern = ", " %R% capture(UPPER %R% one_or_more(WRD)) %R% SPC %R% capture(one_or_more(DGT)) %R% "," %R% SPC %R% capture(one_or_more(DGT))
+bookMetadata = bookMetadata%>%
+  mutate(year = as.numeric(str_match(bookMetadata$Publication.Date, pattern = date_pattern)[,4]))
 
 
 
-book_tidy = function(name){
+
+book_tidy = function(name, title_name){
 #Add chapter
   pattern = one_or_more(one_or_more(UPPER) %R% optional(SPC) %R% optional("-"))
   pattern_chapter = capture(pattern) %R% SPC %R% SPC
@@ -122,7 +130,7 @@ book_tidy = function(name){
   df = sentence %>%
     unnest_tokens(word, sentence)
 #Add book
-  title = tibble(book = name)
+  title = tibble(book = title_name)
   return(cbind(title, df))
 }
 
@@ -135,7 +143,9 @@ names = c("philosophers_stone",
          "half_blood_prince",
          "deathly_hallows")
 
-
+title_names = names%>%
+  str_replace_all(patter = "_", replacement = " ")%>%
+  str_to_title()
 
 #Save 7 books in two ways for further analysis.
 ## First, save 7 books individually in a list called "harrypotter".
@@ -143,20 +153,28 @@ names = c("philosophers_stone",
 
 #Define the variables
 harrypotter = rep(list(tibble()), 7)
-whole_series = tibble()
+harry_series = tibble()
 
-#Save 7 books in a list
 for(i in 1:7){
-  harrypotter[[i]] = book_tidy(names[i])%>%
-    arrange(chapter, sentences)%>%
-    anti_join(stop_words)
+  harrypotter[[i]] = book_tidy(names[i], title_names[i]) %>%
+                     anti_join(stop_words)
+ 
 }
 
-#Save 7 books in a tibble
 for(i in 1:length(names)){
-  whole_series = rbind(whole_series, book_tidy(names[i]))%>%
+  harry_series = rbind(harry_series, book_tidy(names[i], title_names[i]))%>%
     anti_join(stop_words, by = "word")
 }
+
+
+
+
+whole_series = harry_series%>%
+  inner_join(bookMetadata, by = c(book = "Title"))
+
+for(i in 7:1){
+   whole_series$book = relevel(as.factor(whole_series$book), ref = title_names[i])
+ }
 ```
 
 ##1.2 Find the names of main characters and save them. The names of main characters were found in website 
@@ -181,10 +199,15 @@ name = tibble(name = unique(c(characters$first_name, characters$last_name)))%>%
 ```
 
 
+
+
+
+
 #2. Frequency analysis
 ```{r}
 #Look for the ten most mentioned names in each book.
 name_freq = whole_series%>%
+
   inner_join(name, by = c(word = "lower"))%>%
   count(book, word)%>%
   group_by(book)%>%
@@ -194,37 +217,39 @@ name_freq = whole_series%>%
   mutate(word = reorder(word, n))
  
 
+
+
 ggplot(name_freq, aes(x = word, y = n, fill = book))+
    geom_col(show.legend = FALSE) +
   facet_wrap(~book, scales = "free") +  
+
   coord_flip()
  
 #As we can see in the plot, Harry is the most important character in the novel. Also the second and third important character is Ron and Hermione.
 
-#Look for name frequency (except for Harry Potter) based on chapters.
-name_chap_freq = whole_series%>%
-  inner_join(name, by = c(word = "name"))%>%
-  filter(word != "harry")%>%
+
+
+ron_minus_herm = whole_series%>%
+  filter(word %in% c("ron", "hermione"))%>%
   count(book, chapter, word)%>%
-  group_by(book, chapter)%>%
-  top_n(1)%>%
-  ungroup()%>%
-  mutate(word = reorder(word, n))
+  spread(word, n)%>%
+  replace_na(list(ron = 0, hermione = 0))%>%
+  mutate(dif = ron - hermione, signal = dif/abs(dif))
 
-ggplot(name_chap_freq, aes(x = chapter, y = n, fill = word))+
-   geom_col() +
-  facet_wrap(~book, scales = "free_x")
 
-#We can see except for harry, who is the most important character in each chapter based on the frequency of the name.
+ggplot(ron_minus_herm, aes(chapter, dif, fill = signal))+
+  geom_col(show.legend = F)+
+  facet_wrap(~book, scales = "free")
+  
 
-#Look for words frequency for words that are not names based on each book.
 word_freq = whole_series%>%
-  anti_join(name, by = c(word = "name"))%>%
+  anti_join(name, by = c(word = "lower"))%>%
   count(book, word)%>%
   group_by(book)%>%
   top_n(10)%>%
   ungroup()%>%
   mutate(word = reorder(word, n))
+
 
 ggplot(word_freq, aes(x = word, y = n, fill = book))+
   geom_col(show.legend = F)+
@@ -260,45 +285,87 @@ scare_emotion = whole_series%>%
 
 
   ggplot(scare_emotion, aes(x = book, y = percent, fill = book))+
-  geom_col(show.legend = F)
+  geom_col()+
+ theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+  
+#Based on sentiment
+  harry_sentiment = whole_series%>%
+    inner_join(emotion, by = "word")%>%
+    filter(sentiment != "positive" & sentiment != "negative")%>%
+    count(book, year, sentiment)%>%
+    arrange(n)
+  
+  ggplot(harry_sentiment, aes(reorder(sentiment, n), n, fill = sentiment))+
+           geom_col()+
+    facet_wrap(~book,  scales = "free_x")+
+     theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+  
+  
+  #Changes of anger over chapters
+anger = whole_series%>%
+  inner_join(total)%>%
+  inner_join(emotion, by = "word")%>%
+  filter(sentiment == "anger")%>%
+  count(book, chapter, sentiment, total_word)%>%
+  mutate(percent = n/total_word)%>%
+  ungroup()
+  
+ggplot(anger, aes(x = chapter, y = percent, color = book))+ 
+  geom_point(show.legend = F)+
+  geom_line(size = 0.7, show.legend = F)+
+  scale_y_log10(labels = percent_format())+
+  facet_wrap(~book, scales = "free_x")
+
+
 
 #See how sentiment changes through chapter.
   
-  score = get_sentiments("afinn")
+score = get_sentiments("afinn")
+
 emotion_in_chap = whole_series%>%
  count(book, chapter, word)%>%
  inner_join(score, by = "word")%>%
   group_by(book, chapter)%>%
-  mutate(contribution = sum(score*n)/sum(n))%>%
-  ungroup()
+  summarise(contribution = sum(score*n)/sum(n))
+  
+
+ggplot(emotion_in_chap, aes(x = chapter, y = contribution, color = book))+ 
+  geom_point(show.legend = F)+
+  geom_line(size = 0.7, show.legend = F)+
+  facet_wrap(~book, scales = "free_x")
 
   
 
-ggplot(emotion_in_chap, aes(x = chapter, y = contribution, fill = book))+
-  geom_col()+
-  facet_wrap(~book, scales = "free_x")
+
+
   
 ```
 ##2.2 Sentiment by popularity
 ```{r}
+score = get_sentiments("afinn")
+
+
 sentiment_by_popularity = whole_series%>%
   count(book, chapter, word)%>%
   inner_join(score, by = "word")%>%
   inner_join(bookMetadata, by = c(book = "Title"))%>%
   rename(sales = Volume.Sales)%>%
   group_by(book, sales)%>%
-  summarise(contribution = sum(n*score))
+  mutate(contribution = sum(n*score))%>%
+  select(book, sales, contribution)%>%
+  ungroup()%>%
+  unique()
 
 ggplot(sentiment_by_popularity, aes(x = book, y = sales, fill = contribution), stat = "identity")+
-  geom_col()
+  geom_col()+
+  scale_x_discrete(limits = sentiment_by_popularity$book)+
+  coord_flip()
 
-date_pattern = ", " %R% capture(UPPER %R% one_or_more(WRD)) %R% SPC %R% capture(one_or_more(DGT)) %R% "," %R% SPC %R% capture(one_or_more(DGT))
-bookMetadata = bookMetadata%>%
-  mutate(year = str_match(bookMetadata$Publication.Date, pattern = date_pattern)[,4])
 
-dates2 <- c("20jan07","06sep01","6august05","6august2005","20june1999") 
-ndates2 <- as.Date(dates2, "%d%b%y"); ndates2
-as.Date('April 26, 2001', format='%B %d, %Y')
 
 
 ```
