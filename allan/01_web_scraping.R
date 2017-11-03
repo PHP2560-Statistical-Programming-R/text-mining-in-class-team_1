@@ -20,7 +20,7 @@ get_harry_potter_characters <- function(){
   
 }
 
-get_book_metadata(){
+get_book_metadata<-function(){
   # Fetch Book metadata from theGuardian.com e.g publisher, ranking, sales, author e.t.c 
   bookMetadata <- read.csv("https://docs.google.com/spreadsheets/d/1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA/export?format=csv&id=1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA&gid=0")
   
