@@ -1,13 +1,12 @@
----
-title: "Text Analyis"
-author: "Wei Wang"
-date : "10/18/2017"
-output: github_document
----
+Text Analyis
+================
+Wei Wang
+10/18/2017
 
+Setup
+=====
 
-# Setup
-```{r, message=FALSE, warning=FALSE}
+``` r
 # Load in packages.
 
 library(wordcloud)
@@ -33,10 +32,13 @@ theme_set(theme_light()) # set default ggplot theme to light
 fs = 15 # default plot font size
 ```
 
-# 1.Data preparation
+1.Data preparation
+==================
 
-## 1.1 Shape the data.
-```{r, echo=TRUE}
+1.1 Shape the data.
+-------------------
+
+``` r
 hp_books <- c("Harry Potter and the Philosopher's Stone", 
             "Harry Potter and the Chamber of Secrets", 
             "Harry Potter and the Prisoner of Azkaban",
@@ -56,8 +58,10 @@ hp_list <- list(harrypotter::philosophers_stone,
                 )
 ```
 
-## 1.2 Place all of the books in the Harry Potter series into a tibble. Then tokenize the text into single words, strip away all punctuation and capitalization, and add columns to the tibble for the book and chapter.
-```{r, echo=TRUE}
+1.2 Place all of the books in the Harry Potter series into a tibble. Then tokenize the text into single words, strip away all punctuation and capitalization, and add columns to the tibble for the book and chapter.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+``` r
 ##Each book is an array in which each value in the array is a chapter 
 series <- tibble()
 for(i in seq_along(hp_books)) {
@@ -72,16 +76,36 @@ for(i in seq_along(hp_books)) {
 }
 ```
 
-## 1.3 Keep books in order of publication.
-```{r}
+1.3 Keep books in order of publication.
+---------------------------------------
+
+``` r
 series$book <- factor(series$book, levels = rev(hp_books))
 series
 ```
 
-# Group Question Sets
+    ## # A tibble: 1,089,386 x 2
+    ##                                        book    word
+    ##  *                                   <fctr>   <chr>
+    ##  1 Harry Potter and the Philosopher's Stone     the
+    ##  2 Harry Potter and the Philosopher's Stone     boy
+    ##  3 Harry Potter and the Philosopher's Stone     who
+    ##  4 Harry Potter and the Philosopher's Stone   lived
+    ##  5 Harry Potter and the Philosopher's Stone      mr
+    ##  6 Harry Potter and the Philosopher's Stone     and
+    ##  7 Harry Potter and the Philosopher's Stone     mrs
+    ##  8 Harry Potter and the Philosopher's Stone dursley
+    ##  9 Harry Potter and the Philosopher's Stone      of
+    ## 10 Harry Potter and the Philosopher's Stone  number
+    ## # ... with 1,089,376 more rows
 
-## 1. Which is the most important charecter based on how much it was mentioned? 
-```{r}
+Group Question Sets
+===================
+
+1. Which is the most important charecter based on how much it was mentioned?
+----------------------------------------------------------------------------
+
+``` r
 # PLOT WORD FREQUENCY PER BOOK
 series %>%
   group_by(book, word) %>%
@@ -106,20 +130,38 @@ series %>%
        title = "Harry Plotter: Most frequent words throughout the saga") +
   facet_grid(. ~ book) + # separate plot for each book
   coord_flip() # flip axes
-
 ```
 
-##### As we can imagine, Harry is the most common word in every single book and Ron and Hermione are also present. So Harry is the most important character based on how much it was mentioned. 
+![](text-mining_Wei_Wang_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-5-1.png)
 
+##### As we can imagine, Harry is the most common word in every single book and Ron and Hermione are also present. So Harry is the most important character based on how much it was mentioned.
 
-## 2. Which is the most scariest book based on sentiment analysis?
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+2. Which is the most scariest book based on sentiment analysis?
+---------------------------------------------------------------
+
+``` r
 # Use the nrc sentiment data set to assess the different sentiments that are represented across the Harry Potter series.
 series %>%
         right_join(get_sentiments("nrc")) %>%
         filter(!is.na(sentiment)) %>%
         count(sentiment, sort = TRUE)
+```
 
+    ## # A tibble: 10 x 2
+    ##       sentiment     n
+    ##           <chr> <int>
+    ##  1     negative 56579
+    ##  2     positive 38324
+    ##  3      sadness 35866
+    ##  4        anger 32750
+    ##  5        trust 23485
+    ##  6         fear 21544
+    ##  7 anticipation 21123
+    ##  8          joy 14298
+    ##  9      disgust 13381
+    ## 10     surprise 12991
+
+``` r
 # Find how the sentiment changes over the course of each novel.
 series %>%
         group_by(book) %>% 
@@ -134,13 +176,16 @@ series %>%
         ggplot(aes(index, sentiment, fill = book)) +
           geom_bar(alpha = 0.5, stat = "identity", show.legend = FALSE) +
           facet_wrap(~ book, ncol = 2, scales = "free_x")
-
 ```
+
+![](text-mining_Wei_Wang_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-6-1.png)
 
 ##### From the graph, we can find that Deathly Hallows is the most scariest books based on sentiment analysis.
 
-## 3. What are the top ten used words in exception to stop words?
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+3. What are the top ten used words in exception to stop words?
+--------------------------------------------------------------
+
+``` r
 used_words <- series %>%
   group_by(word) %>%
   anti_join(stop_words, by = "word") %>% # delete stopwords
@@ -154,9 +199,12 @@ ggplot(subset(words_freq, n>1600), aes(x = reorder(word, -n), y = n)) +
           title = "Harry Plotter: Top ten used words in exception to stop words")
 ```
 
-## 4. Sentiments by books
+![](text-mining_Wei_Wang_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-7-1.png)
 
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+4. Sentiments by books
+----------------------
+
+``` r
 afinn <- series %>%
         group_by(book) %>% 
         mutate(word_count = 1:n(),
@@ -196,12 +244,21 @@ bind_rows(afinn, bing_and_nrc) %>%
         axis.text.x = element_text(hjust = 1, size = 9))
 ```
 
-## 5. Sentiment by popularity based Guardian data.
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+![](text-mining_Wei_Wang_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-8-1.png)
+
+5. Sentiment by popularity based Guardian data.
+-----------------------------------------------
+
+``` r
 seriesinfo <- read.csv("https://docs.google.com/spreadsheets/d/1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA/export?format=csv&id=1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA&gid=0")
 popularity<-subset(seriesinfo,Author=="Rowling, J.K." & Title != "Tales of Beedle the Bard,The")
 popularity$Volume.Sales <- c("4,475,152", "4,200,654", "4,179,479", "3,583,215", "3,484,047", "3,377,906", "2,950,264", "4,103,445")
 as.numeric(popularity$Volume.Sales)
+```
+
+    ## [1] NA NA NA NA NA NA NA NA
+
+``` r
 colnames(popularity)[colnames(popularity) == 'Title'] <- 'book'
 
 
@@ -232,15 +289,17 @@ ggplot(df)  +
   theme(
     axis.text.x=element_blank(),
     axis.ticks.x=element_blank())
-
-
 ```
 
-## Unique questions.
+![](text-mining_Wei_Wang_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-9-1.png)
 
+Unique questions.
+-----------------
 
-## 1. Wordcloud
-```{r}
+1. Wordcloud
+------------
+
+``` r
 series$book <- factor(series$book, levels = rev(hp_books))
 series %>% 
   anti_join(stop_words) %>%
@@ -248,9 +307,14 @@ series %>%
   with(wordcloud(word, n, max.words = 200))
 ```
 
-## 2. Comparison cloud with stop words.
+    ## Joining, by = "word"
 
-```{r}
+![](text-mining_Wei_Wang_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-10-1.png)
+
+2. Comparison cloud with stop words.
+------------------------------------
+
+``` r
 series %>%
   inner_join(get_sentiments("bing")) %>%
   count(word, sentiment, sort = TRUE) %>%
@@ -259,9 +323,14 @@ series %>%
                    max.words = 100)
 ```
 
+    ## Joining, by = "word"
 
-## 3. Comparison cloud without stop words.
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+![](text-mining_Wei_Wang_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-11-1.png)
+
+3. Comparison cloud without stop words.
+---------------------------------------
+
+``` r
 series %>%
   anti_join(stop_words) %>%
   inner_join(get_sentiments("bing")) %>%
@@ -269,14 +338,9 @@ series %>%
   acast(word ~ sentiment, value.var = "n", fill = 0) %>%
   comparison.cloud(colors = c("forestgreen", "firebrick4"),
                    max.words = 80)
-
 ```
 
-## 4. 
+![](text-mining_Wei_Wang_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-12-1.png)
 
-
-
-
-
-
-
+4.
+--
