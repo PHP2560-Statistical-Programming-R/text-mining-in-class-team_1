@@ -188,6 +188,7 @@ harrypotter_clean_tokens <- harrypotter_tokenized %>%
 dt<-harrypotter_clean_tokens %>%
   mutate(id = R.utils::capitalize(word)) %>%
   inner_join(harrypotter_characters, by =c(id = "FirstName") ) %>%
+<<<<<<< HEAD:text-mining-allan.Rmd
   count(FullName,sort= TRUE)
 
 dt%>%
@@ -201,10 +202,20 @@ dt%>%
     legend.position ="none")
 
 datatable(dt)
+=======
+  count(FullName,sort= TRUE)  %>%
+  top_n(20) %>%
+  ggplot() +
+    geom_bar(mapping = aes(x = reorder(FullName, n), fill=FullName,
+                           y = n),alpha = 0.8, stat = "identity") +
+    labs(x = NULL, y = "Count") +
+    coord_flip() + ggtitle("Harry Potter Top 20 Characters")+
+    theme(legend.position="none")
+>>>>>>> 8805b2ebe6f35cc63f5719040cc747e69f4f3775:allan/text-mining-allan.Rmd
 ```
 
-###Q2. what is the most scariest book based on sentiment analysis ?
 
+###Q2. what is the most scariest book based on sentiment analysis ?
 ```{r  message=FALSE, warning=FALSE}
 
 hp_negative_sentiment<-harrypotter_clean_tokens%>%
@@ -252,8 +263,8 @@ wordcloud(words = word_count_gt_600$word, freq = word_count_gt_600$n, min.freq =
           colors=brewer.pal(8, "Dark2"))
 
 ```
-###Q4. sentiments by books 
 
+###Q4. sentiments by books 
 ```{r  message=FALSE, warning=FALSE}
 hp_sentiment_by_book <- harrypotter_clean_tokens%>%
   # join nrc to get sentiment value
@@ -277,7 +288,6 @@ hp_sentiment_by_book%>%
 ```
 
 ###Q5. sentiment by popularity based on www.theguardian.com
-
 ```{r  message=FALSE, warning=FALSE}
 hp_by_sales<- harrypotter_clean_tokens%>%
   # join nrc to get sentiment value
@@ -333,6 +343,7 @@ bigram_counts%>%
        y = "second word in pair")
 
 ```
+
 ###Q2. Analyze the network structure of the word pairs (ngrams) in harry potter series 
 ```{r  message=FALSE, warning=FALSE}
 bigram_graph <- bigram_counts %>%
@@ -576,4 +587,8 @@ tidy(chapters_lda, matrix = "gamma") %>%
 
 # Acknowledgments
 Question Template from http://tidytextmining.com 
+<<<<<<< HEAD:text-mining-allan.Rmd
+=======
+
+>>>>>>> 8805b2ebe6f35cc63f5719040cc747e69f4f3775:allan/text-mining-allan.Rmd
 

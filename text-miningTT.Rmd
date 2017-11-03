@@ -62,6 +62,7 @@ install.packages("RCurl")
 install.packages("htmlwidgets")
 install.packages("igraph")
 install.packages("viridis")
+install.packages("topicmodels")
 ```
 
 ```{r}
@@ -83,6 +84,7 @@ library(RCurl)
 library(igraph)
 library(ggraph)
 library(viridis)
+library(topicmodels)
 ```
 
 ```{r}
@@ -139,11 +141,7 @@ harrypotter_token_clean <- harrypotter_token %>%
 raw_wiki_names = readLines('https://en.wikipedia.org/wiki/List_of_Harry_Potter_characters')
  #define custom stop word used in data cleaning
  custom_stop_words <-c('Wikipedia','Wikimedia','The','Puppet','Hogwarts','Stories', 'Quidditch','Death',"Wizarding", "Supporting", "Lego","Privacy","Fantastic")
-# read entire hp_wikipedia_site
- email <- capture(one_or_more(WRD)) %R% 
-  "@" %R% capture(one_or_more(WRD)) %R% 
-  DOT %R% capture(one_or_more(WRD))
- 
+
 character_pattern<-capture (UPPER %R% one_or_more(WRD)) %R% SPC %R% capture(UPPER %R% one_or_more(WRD))
 harrypotter_characters <- str_match(raw_wiki_names, character_pattern) %>%
   as.data.frame() %>% # convert to data frame for easy manipulation
@@ -369,13 +367,31 @@ hp_sentiment <- harrypotter_token_clean%>%
   group_by(Title, Chapter,sentiment)%>%
   summarise(count=sum(score))
 
+# this function returns ggplot theme definition ~ this will prevent code duplication
+uniform_ggplot <- function(base_size = 12, base_family = "sans"){
+  theme_grey(base_size = base_size, base_family = base_family) +
+    theme(
+      axis.text = element_text(size = 12),
+      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+      axis.title = element_text(size = 14),
+      panel.grid.major = element_line(color = "grey"),
+      panel.grid.minor = element_blank(),
+      panel.background = element_rect(fill = "aliceblue"),
+      strip.background = element_rect(fill = "lightgrey", color = "grey", size = 1),
+      strip.text = element_text(face = "bold", size = 12, color = "navy"),
+      legend.position = "bottom",
+      legend.background = element_blank(),
+      panel.margin = unit(.5, "lines"),
+      panel.border = element_rect(color = "grey", fill = NA, size = 0.5)
+    )
+}
 
 hp_sentiment%>%
   filter(count>0)%>%
   ggplot( aes(x = Chapter, y = count)) + 
   geom_line(size = 1, color = brewer.pal(3, "Set1")[3]) +
   facet_grid(sentiment~.) +
-  uniform_ggplot_theme() + 
+  uniform_ggplot() + 
   theme(
     axis.text.x = element_text(angle = 0, vjust = 0, hjust = 0),
     legend.position = "none") +
@@ -387,12 +403,12 @@ hp_sentiment%>%
 8. How does negative sentiments changes over time? Is there any similarities in the 1st and last chapter?
 ```{r  message=FALSE, warning=FALSE}
 
-harrypotter_sentiment%>%
+hp_sentiment%>%
   filter(count<0)%>%
   ggplot( aes(x = Chapter, y = count)) + 
   geom_line(size = 1, color = brewer.pal(3, "Set1")[1]) +
   facet_grid(sentiment~.) +
-  uniform_ggplot_theme() + 
+  uniform_ggplot() + 
   theme(
     axis.text.x = element_text(angle = 0, vjust = 0, hjust = 0),
     legend.position = "none") +
@@ -405,40 +421,41 @@ harrypotter_sentiment%>%
 ```{r  message=FALSE, warning=FALSE}
 
 
-hp_df<- harrypotter_clean_tokens%>%
+hp_sentiment_difference<- harrypotter_token_clean%>%
   inner_join(get_sentiments("bing"), by = "word") %>% # join sentiment
   count(Title, Chapter, sentiment, sort = TRUE)%>% # count sentiment
   spread(sentiment, n, fill = 0) %>%
   mutate(sentiment = positive - negative)
 
-ggplot(hp_df, aes(Chapter, sentiment, fill = Title))+
+ggplot(hp_sentiment_difference, aes(Chapter, sentiment, fill = Title))+
   geom_line(size = 1, color = brewer.pal(3, "Set1")[3]) +
   facet_wrap(~Title, ncol = 2, scales = "free_x")
 
-ggplot(hp_df, aes(Chapter, sentiment, colour = Title))+
+ggplot(hp_sentiment_difference, aes(Chapter, sentiment, colour = Title))+
   geom_line()+
   theme(
     legend.position ="bottom")
-# looks like Harry Potter and the Deathly Hallows has the highest sentimental variation
+
+#Harry Potter and the Deathly Hallows has the highest sentimental variation
 ```
 
 10. How frequently did  the top 8 most popular characters appear in the last Book
 ```{r  message=FALSE, warning=FALSE}
-top_n_characters <- harrypotter_clean_tokens %>%
+top_characters <- harrypotter_token_clean %>%
   mutate(id = R.utils::capitalize(word)) %>%
   inner_join(harrypotter_characters, by =c(id = "FirstName") ) %>%
   count(FullName,word,sort= TRUE) %>%
   top_n(9)
 
 
-harrypotter_clean_tokens %>%
+harrypotter_token_clean %>%
   # get the last book of HP
   filter(Title=='Harry Potter and the Deathly Hallows')%>%
   mutate(id = R.utils::capitalize(word)) %>% # create uniq id 
   # get all characters by first name
   inner_join(harrypotter_characters, by = c(id = "FirstName")) %>%
   count( Chapter, FullName,word, sort = TRUE) %>%
-  filter(word %in% as.vector(top_n_characters$word))%>% 
+  filter(word %in% as.vector(top_characters$word))%>% 
   #plot the graph
   ggplot(aes(Chapter, n)) +
   geom_point() +
@@ -452,7 +469,7 @@ harrypotter_clean_tokens %>%
 
 ```{r  message=FALSE, warning=FALSE}
 # include only words and  not characters
-hp_topic_model_df <- harrypotter_clean_tokens %>%
+hp_tmodel_difference <- harrypotter_token_clean %>%
   mutate(id = R.utils::capitalize(word)) %>%
   # Remove Characters by 1st name
   anti_join(harrypotter_characters, by =c(id = "FirstName") ) %>% 
@@ -463,12 +480,12 @@ hp_topic_model_df <- harrypotter_clean_tokens %>%
   count(document,word,sort= TRUE)  %>%
   filter(n > 15)
 
-chapters_dtm <- hp_topic_model_df %>%
+chapter_dtm <- hp_tmodel_difference %>%
   cast_dtm(document, word, n)
 
-chapters_lda <- LDA(chapters_dtm, k = 6, control = list(seed = 4564))
+chapter_lda <- LDA(chapters_dtm, k = 6, control = list(seed = 4564))
 
-chapter_topics <- tidy(chapters_lda, matrix = "beta")
+chapter_topics <- tidy(chapter_lda, matrix = "beta")
 head(chapter_topics)
 
  chapter_topics %>%
@@ -483,11 +500,10 @@ head(chapter_topics)
   facet_wrap(~ topic, scales = "free") +
   coord_flip()
 
-# it is dificult to decode all types of  topics potrayed by the author, because of low LDA k value. Increasing k slows down runtime
 ```
 12. How Does the 6 topics discussed varry from each series of Harry Potter
 ```{r message=FALSE, warning=FALSE}
-tidy(chapters_lda, matrix = "gamma") %>%
+tidy(chapter_lda, matrix = "gamma") %>%
   # extract book title
   separate(document, c("title", "chapter"), sep = "_", convert = TRUE)%>%
   ggplot( aes(gamma, fill = factor(topic))) +
