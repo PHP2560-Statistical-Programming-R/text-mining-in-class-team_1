@@ -11,7 +11,7 @@ Harry Potter is a series of fantasy novels written by British author J. K. Rowli
 
 Harry Potter being one of the most popular novel, we though we should try do some basic yet informative frequency & sentimental analysis
 
-## The Data
+## Data Sources
 
 The text data used in this analysis was obtained from R package (harrypotter) on GitHub containing the text for all 7 books in the Harry Potter series, by JK Rowling. https://github.com/bradleyboehmke/harrypotter
 
