@@ -216,53 +216,29 @@ for(i in 7:1){
 
 #Count the words
 
-word_frequency = whole_series %>%
-  count(book, word)%>%
-  group_by(book)%>%
-  top_n(10)%>%
-  arrange(desc(n))%>%
-  ungroup()%>%
-  mutate(word = reorder(word, n))
- 
 
-ggplot(word_frequency, aes(x = word, y = n, fill = book))+
-   geom_col(show.legend = FALSE) +
-  facet_wrap(~book, scales = "free") +  
-  coord_flip()
-  
- 
-#As we can see in the plot, Harry is the most important character in the novel. Also the second and third important character is Ron and Hermione.
 
 #Look for name frequency (except for Harry Potter) based on chapters.
 name_chap_freq = whole_series%>%
   inner_join(name, by = c(word = "lower"))%>%
-  filter(word != "harry")%>%
-  count(book, chapter, word)%>%
-  group_by(book, chapter)%>%
-  top_n(1)%>%
+  count(book, word)%>%
+  group_by(book)%>%
+  top_n(5)%>%
   ungroup()%>%
   mutate(word = reorder(word, n))
 
-ggplot(name_chap_freq, aes(x = chapter, y = n, fill = word))+
+ggplot(name_chap_freq, aes(x = word, y = n, fill = word))+
    geom_col() +
-  facet_wrap(~book, scales = "free_x") 
+  facet_wrap(~book, scales = "free") +
   coord_flip()
+ 
 
-#As we can see in the plot, Harry is the most important character in the novel. Also the second and third important character is Ron and Hermione.
-character_txt = readLines("1_characters.txt")
-pattern = "\t" %R% optional(or("Professor ", "")) %R% capture(one_or_more(WRD))
-characters = str_match(character_txt ,pattern = pattern)
-remove_NA = characters[,2][!is.na(characters[,2])]
-name_of_character = tibble(word = str_to_lower(remove_NA))
+
 
 #Look for words frequency for words that are not names based on each book.
 word_freq = whole_series%>%
   anti_join(name, by = c(word = "lower"))%>%
-  count(book, word)%>%
-  group_by(book)%>%
-  top_n(10)%>%
-  ungroup()%>%
-  mutate(word = reorder(word, n))
+
 ```
 
 
@@ -289,7 +265,10 @@ scare_emotion = whole_series%>%
 
 
   ggplot(scare_emotion, aes(x = book, y = percent, fill = book))+
-  geom_col(show.legend = F)
+  geom_col()+
+ theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
   
 #Based on sentiment
   harry_sentiment = whole_series%>%
@@ -353,7 +332,5 @@ ggplot(sentiment_by_popularity, aes(x = book, y = sales, fill = contribution), s
 
 
 
-=======
-```
-##2. Sentiment by book
+
 
