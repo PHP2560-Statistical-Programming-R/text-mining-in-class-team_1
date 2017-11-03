@@ -1,5 +1,6 @@
 # data importing and cleaning 
-
+clean_data <- function() {
+    library(harrypotter)
 # tidying the text of the first book: 
 chamber_of_secrets_tidy <- data_frame( text = chamber_of_secrets, Book = "chamber_of_secrets") %>%
   mutate(chapter = row_number() ) %>%
@@ -45,3 +46,7 @@ harrypoter
 harrypoterclean <- harrypoter %>%
   unnest_tokens(word, sentence) %>%
   anti_join(stop_words)
+save(harrypoterclean, file = "Nour/data/harrypoterclean.Rda")
+}
+clean_data()
+
