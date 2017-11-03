@@ -1,5 +1,5 @@
 # chracters list 
-
+characterlist <- function(){
 # making list of  the whole series characters: 
 # after making a txt file from "https://en.wikipedia.org/wiki/List_of_Harry_Potter_characters" then importing to R 
 characters_raw <- readLines("nour/characters_ weki.txt")
@@ -27,4 +27,9 @@ characters_list %>%
   mutate(word = first) %>%
   mutate_if(is.factor, as.character) -> characters_listjoin
 
-characters_listjoin$word <- str_replace_all(characters_listjoin$word , pattern = one_or_more(WRD), replacement = tolower)
+characters_listjoin$word <- str_replace_all(
+  characters_listjoin$word , pattern = one_or_more(WRD), replacement = tolower)
+
+save(characters_listjoin, file = "Nour/data/characters_listjoin.Rda")
+}
+characterlist()
