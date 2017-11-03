@@ -185,24 +185,9 @@ harrypotter_clean_tokens <- harrypotter_tokenized %>%
 ###Q1. what is the most important charecter based on how much it was mentioned 
 ```{r  message=FALSE, warning=FALSE}
 
-dt<-harrypotter_clean_tokens %>%
+harrypotter_clean_tokens %>%
   mutate(id = R.utils::capitalize(word)) %>%
   inner_join(harrypotter_characters, by =c(id = "FirstName") ) %>%
-<<<<<<< HEAD:text-mining-allan.Rmd
-  count(FullName,sort= TRUE)
-
-dt%>%
-  top_n(30) %>%
-  ggplot() +
-  geom_bar(mapping = aes(x = reorder(FullName, n), fill=FullName,
-                         y = n),alpha = 0.8, stat = "identity") +
-  labs(x = NULL, y = "# Appearance") +
-  coord_flip() + ggtitle("Popularity Of Characters")+
-  theme(
-    legend.position ="none")
-
-datatable(dt)
-=======
   count(FullName,sort= TRUE)  %>%
   top_n(20) %>%
   ggplot() +
@@ -211,7 +196,6 @@ datatable(dt)
     labs(x = NULL, y = "Count") +
     coord_flip() + ggtitle("Harry Potter Top 20 Characters")+
     theme(legend.position="none")
->>>>>>> 8805b2ebe6f35cc63f5719040cc747e69f4f3775:allan/text-mining-allan.Rmd
 ```
 
 
@@ -475,7 +459,7 @@ harrypotter_sentiment%>%
 ###Q8. How does negative sentiments changes over time? Is there any similarities in the 1st and last chapter?
 ```{r  message=FALSE, warning=FALSE}
 
-# plot sentiment df
+# plot sentiment df 
 harrypotter_sentiment%>%
   filter(count<0)%>%
   ggplot( aes(x = Chapter, y = count)) + 
@@ -587,8 +571,5 @@ tidy(chapters_lda, matrix = "gamma") %>%
 
 # Acknowledgments
 Question Template from http://tidytextmining.com 
-<<<<<<< HEAD:text-mining-allan.Rmd
-=======
 
->>>>>>> 8805b2ebe6f35cc63f5719040cc747e69f4f3775:allan/text-mining-allan.Rmd
 
