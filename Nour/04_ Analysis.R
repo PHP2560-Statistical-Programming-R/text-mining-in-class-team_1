@@ -1,5 +1,9 @@
-##Q1 what is the most important charecters based on how much is whas mentioned assied from harry ? 
+# load needed data 
+load("Nour/data/characters_listjoin.Rda")
+load("Nour/data/harrypoterclean.Rda")
 
+##Q1 what is the most important charecters based on how much is whas mentioned assied from harry ? 
+graphQ1 <- function(){
 harrypoterclean %>%
   inner_join( characters_listjoin, by = "word" ) %>%
   count(Book, word,sort= TRUE) %>%
@@ -18,12 +22,13 @@ harrypoterclean %>%
          panel.grid.major.y = element_blank(),
          panel.grid.minor = element_line(color = "gray10", size = 0.5)
   )
-
+ggsave("Nour/graph/q1.png")
+}
 
 # not that joining and counting was done using first name only wich is not accurate. due to inability to use full name because  full names not always mentiond. also family name cannot be used because it is shared between many characters. 
 
 ##Q2 what is the most scariest book based on sentiment analysis ?
-
+graphQ2 <- function(){
 harrypoterclean %>%
   count(Book) %>%
   rename(total_word = n) %>%
@@ -54,9 +59,11 @@ harrypoterclean %>%
          panel.grid.major.x = element_blank(),
          panel.grid.minor = element_line(color = "gray50", size = .5)
   )
-
+ggsave("Nour/graph/q1.png")
+}
 
 ##the most imporatnt word by frequency of use
+graphQ3 <- function(){
 harrypoterclean %>%
   count(Book, word, sort = TRUE) %>%
   group_by(Book) %>%
@@ -78,12 +85,14 @@ harrypoterclean %>%
          panel.grid.minor.x = element_line(color = "gray50", size = .5),
          panel.grid.major.x = element_line(color = "gray50", size = .5)
   )
+  ggsave("Nour/graph/q3.png")
+}
 
 # So the most imporatnt word by frequency of use is harry 
 
 
 ##most mentioned character by book graph  
-
+graphQ4 <- function(){
 harrypoterclean %>%
   inner_join( characters_listjoin, by = "word" ) %>%
   count(Book, word, sort =  TRUE) %>%
@@ -109,10 +118,11 @@ harrypoterclean %>%
          panel.grid.major.x = element_line(color = "gray50", size = .5)
   )
 
-
+ggsave("Nour/graph/q4.png")
+}
 
 ##how harry mentioned changed by Book graph 
-
+graphQ5 <- function(){
 harrypoterclean %>%
   inner_join(characters_listjoin, by = "word") %>%
   count(Book, word) %>%
@@ -134,10 +144,11 @@ harrypoterclean %>%
          panel.grid.major.x = element_blank(),
          panel.grid.minor = element_line(color = "gray50", size = .5)
   )
-
+ggsave("Nour/graph/q5.png")
+}
 
 ##sentiment by Book 
-
+graphQ6 <- function(){
 harrypoterclean %>%
   # filter uut confusing words 
   filter(word != "professor") %>%
@@ -167,9 +178,10 @@ harrypoterclean %>%
          panel.grid.minor.x = element_line(color = "gray50", size = .3),
          panel.grid.major.x = element_line(color = "gray50", size = .3)
   )
-
+ggsave("Nour/graph/q6.png")
+}
 ##frequency of harry mentioning over the books: 
-
+graphQ7 <- function(){
 harrypoterclean %>%
   filter(word == "harry") %>%
   mutate( fiftylines=  floor(line / 50)) %>%
@@ -180,9 +192,12 @@ harrypoterclean %>%
   facet_wrap(~Book) +
   geom_line(size = .1, show.legend = FALSE) +
   expand_limits(y = 0)
-
+ggsave("Nour/graph/q7.png")
+}
 
 ##most popular characters over time by book
+
+graphQ8 <- function(){
 harrypoterclean %>%
   inner_join(characters_listjoin) %>%
   mutate( fiftylines=  floor(line / 50)) %>%
@@ -202,3 +217,13 @@ harrypoterclean %>%
     panel.grid.major.y  = element_blank(),
     text = element_text(size = 7, color = "black")
   )
+  ggsave("Nour/graph/q8.png")
+}
+graphQ1()
+graphQ2()
+graphQ3()
+graphQ4()
+graphQ5()
+graphQ6()
+graphQ7()
+graphQ8()
