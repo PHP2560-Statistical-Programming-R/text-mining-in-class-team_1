@@ -108,17 +108,20 @@ theme = theme_minimal() +
 # Fetch Book metadata from theGuardian.com e.g publisher, ranking, sales, author e.t.c 
 bookMetadata <- as_tibble(read.csv("https://docs.google.com/spreadsheets/d/1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA/export?format=csv&id=1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA&gid=0"))
 
-harry_potter = "harry potter and the "
+harry_potter = "Harry Potter and the "
 bookMetadata$Title  = bookMetadata$Title%>%
-  str_to_lower()%>%
   str_replace_all(pattern = or(harry_potter, "'"), "")%>%
-  str_replace_all(pattern = or(" ", "-"), "_")
+  str_replace_all(pattern = "-", " ")%>%
+  str_to_title()
+
+
+  
 
 bookMetadata$Volume.Sales = bookMetadata$Volume.Sales%>%
   str_replace_all(pattern = ",", "")%>%
   as.numeric()
 
-bookMetadata$Volume.Sales[bookMetadata$Title == "half_blood_prince"] = bookMetadata$Volume.Sales[bookMetadata$Title == "half_blood_prince"] + bookMetadata$Volume.Sales[bookMetadata$Title == "half_blood_prince:childrens_edition"]
+bookMetadata$Volume.Sales[bookMetadata$Title == "Half Blood Prince"] = bookMetadata$Volume.Sales[bookMetadata$Title == "Half Blood Prince"] + bookMetadata$Volume.Sales[bookMetadata$Title == "Half Blood Prince:childrens Edition" ]
 
 
 date_pattern = ", " %R% capture(UPPER %R% one_or_more(WRD)) %R% SPC %R% capture(one_or_more(DGT)) %R% "," %R% SPC %R% capture(one_or_more(DGT))
@@ -126,17 +129,14 @@ bookMetadata = bookMetadata%>%
   mutate(year = as.numeric(str_match(bookMetadata$Publication.Date, pattern = date_pattern)[,4]))
 
 #Function that adds columns called chapter, sentence, word and title, where word contain individual words in the novel, while sentence and chapter refers to the correpsonding chapter and sentence that the word appears, and book referes to the name of the book.
- book_tidy = function(name){
-  chapter = tibble(text = get(name))%>%
+ book_tidy = function(name, title_name){
+  chapter = tibble(text = get(name))
  #Add chapter
    pattern = one_or_more(one_or_more(UPPER) %R% optional(SPC) %R% optional("-"))
    pattern_chapter = capture(pattern) %R% SPC %R% SPC
    chapter_name = str_extract(get(name), pattern =pattern_chapter)
   chapter = tibble(text = get(name), chapter_name = chapter_name)%>%
       mutate(chapter = row_number())
-    
- 
- 
  #Add sentence
     sentence = chapter%>%
       unnest_tokens(sentence, text, token = "sentences")%>%
@@ -146,7 +146,7 @@ bookMetadata = bookMetadata%>%
     df = sentence %>%
       unnest_tokens(word, sentence)
  #Add book
-    title = tibble(book = name)
+    title = tibble(book = title_name)
     return(cbind(title, df))
   }
 
@@ -159,29 +159,40 @@ names = c("philosophers_stone",
          "half_blood_prince",
          "deathly_hallows")
 
+title_names = names%>%
+  str_replace_all(pattern = "_", replacement = " ")%>%
+  str_to_title()
+
 
 
 
 harrypotter = rep(list(tibble()), 7)
-whole_series = tibble()
+harry_series = tibble()
 
 #Save 7 books in a list, each in a tibble and remove the stop words.
 for(i in 1:7){
-  harrypotter[[i]] = book_tidy(names[i]) %>%
+  harrypotter[[i]] = book_tidy(names[i], title_names[i]) %>%
                      anti_join(stop_words)
  
 }
 
+#Save 7 books in a tibble and remove stop words.
 for(i in 1:length(names)){
-  whole_series = rbind(whole_series, book_tidy(names[i]))%>%
+  harry_series = rbind(harry_series, book_tidy(names[i], title_names[i]))%>%
     anti_join(stop_words, by = "word")
 }
 
 
 
 
-whole_series = whole_series%>%
+whole_series = harry_series%>%
   inner_join(bookMetadata, by = c(book = "Title"))
+
+for(i in 7:1){
+  whole_series$book = relevel(as.factor(whole_series$book), ref = title_names[i])
+}
+
+
 ```
 
 #1. Freuquency analysis
