@@ -137,13 +137,30 @@ rownames(characters_list) <- seq(length=nrow(characters_list))
   
 ```
 
-Q1 what is the most important charecter based on how much is whas mentioned ? 
+Q1 what is the most important charecters based on how much is whas mentioned assied from harry ? 
 ```{r}
  
  harrypoterclean %>%
 inner_join( characters_listjoin, by = "word" ) %>%
-count(Book, word,sort= TRUE)  
-# not that joining and counting was done using first name only wich is not accurate. due to inability to use full name because  full names not always mentiond. also family name cannot be used becaue it is shared between many characters. 
+count(Book, word,sort= TRUE) %>%
+  top_n(50) %>%
+  filter( word != "harry")%>%
+  ggplot(aes(word, n, fill = word)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~Book) +
+  coord_flip() +
+  theme_minimal() + # start with a minimal them and add what we need 
+  theme( text = element_text(color = "gray20"),
+         axis.text = element_text(face = "italic", size = 6), 
+         axis.line = element_line(color = "gray50", size = 0.5), 
+         axis.line.y = element_blank(), 
+         panel.grid.major = element_line(color = "gray80", size = 0.5),
+         panel.grid.major.y = element_blank(),
+         panel.grid.minor = element_line(color = "gray10", size = 0.5)
+         )
+  
+
+# not that joining and counting was done using first name only wich is not accurate. due to inability to use full name because  full names not always mentiond. also family name cannot be used because it is shared between many characters. 
 ```
 Q2 what is the most scariest book based on sentiment analysis ?
 ```{r}
