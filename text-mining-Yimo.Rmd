@@ -243,7 +243,6 @@ ggplot(ron_minus_herm, aes(chapter, dif, fill = signal))+
   
 
 word_freq = whole_series%>%
-  anti_join(name, by = c(word = "lower"))%>%
   count(book, word)%>%
   group_by(book)%>%
   top_n(10)%>%
