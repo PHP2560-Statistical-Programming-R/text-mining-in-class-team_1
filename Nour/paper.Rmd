@@ -9,7 +9,6 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-eval(F)
 ```
 
 Analysis 
@@ -25,6 +24,7 @@ Analysis
 
 ##Q3 in each book, what is the most imporatnt word by frequency of use aside from stop word ?
 ![*Fig. 3*  ](graph/q3.png)
+
 ## Q4 How many times was Harry mentioned in each book ?
 ![*Fig. 4*  ](graph/q5.png)
 ## over the books course how harry was mentioned ?
