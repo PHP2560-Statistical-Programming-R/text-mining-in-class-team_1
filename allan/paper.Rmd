@@ -1,5 +1,5 @@
 ---
-title: "Harry Potter Text Mining & Sentiment Analysis"
+title: "Harry Potter Text Mining & Sentimental Analysis"
 author: "Allan Kimaina"
 date: "November 2, 2017"
 output: html_document
@@ -41,3 +41,7 @@ Harry being the main character in the entire series, it’s clear that his name 
 ![*Fig.5* HP ](graph/hp_by_sales.q5.png)
 
 Looks like sentimental score is proportional to the sale/Popularity. But there could be a confounding variable existing or temporal association of variables
+
+###Q6.How does sentiment changes from 1 chapter to the next for each book? Which book has the highest variation?
+![*Fig.5* HP ](graph/hp_sentiment_changes.q6.png)
+# Both the graph and standard deviation tells us that Harry Potter and the Deathly Hallows has the highest sentimental variation. 

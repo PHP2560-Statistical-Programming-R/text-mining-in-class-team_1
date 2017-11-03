@@ -13,6 +13,6 @@ source("allan/01_web_scraping.R")   # web Scrape data
 source("allan/02_load_harry_potter_books.R") # create hp books
 source("allan/03_clean_data.R") # wrangle, clean and tokenize data
 source("allan/04_main_analysis.R")  # create graphs and datatable
-#source("allan/05_other_analysis.R")  ## create graphs and datatable
+source("allan/05_other_analysis.R")  ## create graphs and datatable
 rmarkdown::render("allan/paper.Rmd", output_format = "html_document")
 
