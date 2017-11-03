@@ -2,8 +2,9 @@
 
 
 # load required data
-load("allan/data/harrypotter_clean_tokens.Rda")
-load("allan/data/harrypotter_characters.rda")
+load("final_project/data/harrypotter_clean_tokens.Rda")
+load("final_project/data/harrypotter_characters.rda")
+load("final_project/data/bookMetadata.rda")
 
 ###Q1. what is the most important charecter based on how much it was mentioned
 generate_q1_graph <- function() {
@@ -25,7 +26,7 @@ generate_q1_graph <- function() {
     labs(x = NULL, y = "Count") +
     coord_flip() + ggtitle("Harry Potter Top 20 Characters") +
     theme(legend.position = "none") +
-    ggsave('allan/graph/harrypotter_clean_tokens.q1.png')
+    ggsave('final_project/graph/harrypotter_clean_tokens.q1.png')
 }
 
 ###Q2. what is the most scariest book based on sentiment analysis ?
@@ -42,7 +43,7 @@ generate_q2_graph <- function() {
     labs(x = NULL, y = "Level") +
     theme(legend.position = "none") +
     coord_flip() +
-    ggsave('allan/graph/hp_negative_sentiment.q2.png')
+    ggsave('final_project/graph/hp_negative_sentiment.q2.png')
 }
 
 ###Q3. What the top ten used words in exception to stop words ?
@@ -53,10 +54,10 @@ generate_q3_graph <- function() {
     filter(n > 600)
   
   # save for future use
-  save(word_count, file = "allan/data/hp_word_count.q3.Rda")
+  save(word_count, file = "final_project/data/hp_word_count.q3.Rda")
   
   # plot using word cloud
-  png("allan/graph/word_count.q3.png")
+  png("final_project/graph/word_count.q3.png")
   wordcloud(
     words = word_count$word,
     freq = word_count$n,
@@ -90,7 +91,7 @@ generate_q4_graph <- function() {
     labs(x = NULL, y = "Score") +
     facet_wrap( ~ Title) +
     coord_flip() +
-    ggsave('allan/graph/hp_sentiment_by_book.q4.png')
+    ggsave('final_project/graph/hp_sentiment_by_book.q4.png')
 }
 
 generate_q5_graph <- function() {
@@ -128,7 +129,7 @@ generate_q5_graph <- function() {
     labs(x = "Book", y = "Sales/Popularity") +
     theme(axis.text.x = element_blank(),
           axis.ticks.x = element_blank()) +
-    ggsave('allan/graph/hp_by_sales.q5.png')
+    ggsave('final_project/graph/hp_by_sales.q5.png')
   
 }
 
