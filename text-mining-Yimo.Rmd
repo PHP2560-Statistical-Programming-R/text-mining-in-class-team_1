@@ -56,7 +56,7 @@ We will spend the next 2 weeks working on analyzing textual data in R. You will 
 # And the sixth question is unique for every student.
 ```
 
-# Preperation
+#0. Preperation
 ```{r}
 
     if (packageVersion("devtools") < 1.6) {
@@ -98,7 +98,7 @@ theme = theme_minimal() +
 
 
 
-#0. Preperation
+#1. Preperation
 ```{r}
 
 #Function that adds columns called chapter, sentence, word and title, where word contain individual words in the novel, while sentence and chapter refers to the correpsonding chapter and sentence that the word appears, and book referes to the name of the book.
@@ -191,8 +191,24 @@ whole_series = harry_series%>%
 for(i in 7:1){
   whole_series$book = relevel(as.factor(whole_series$book), ref = title_names[i])
 }
+```
+#The name of main characters was found in website "https://en.wikipedia.org/wiki/List_of_Harry_Potter_characters", the content is simply copy and paste into local .txt document called characters.txt.
+##1.2 Find the names of main characters and save them. The names of main characters were found in website 
+```{r}
+#"https://en.wikipedia.org/wiki/List_of_Harry_Potter_characters", the content is simply copy and paste into local document called "characters.txt".
+  characters_txt = readLines("harry_potter_characters.txt")
+#Define pattern
+ pattern = "\t" %R% capture(UPPER %R% one_or_more(WRD)) %R% SPC %R% capture(UPPER %R% one_or_more(WRD))
+ #Extract the names in the txt.
+ characters = str_match(characters_txt, pattern = pattern)%>%
+    as_tibble()%>%
+    setNames(c("name", "first_name", "last_name"))%>%
+   #Remove NA
+    filter(!is.na(name))
 
-
+ name = tibble(name = unique(c(characters$first_name, characters$last_name)))%>%
+  #Add a column called lower, which is the names in lower case.
+   mutate(lower = tolower(name))
 ```
 
 #1. Freuquency analysis
@@ -201,21 +217,19 @@ for(i in 7:1){
 #Count the words
 
 word_frequency = whole_series %>%
-  
-                  count(book, word)%>%
+  count(book, word)%>%
   group_by(book)%>%
   top_n(10)%>%
   arrange(desc(n))%>%
   ungroup()%>%
-  
   mutate(word = reorder(word, n))
  
 
 ggplot(word_frequency, aes(x = word, y = n, fill = book))+
    geom_col(show.legend = FALSE) +
   facet_wrap(~book, scales = "free") +  
-  coord_flip() + 
-  theme
+  coord_flip()
+  
  
 #As we can see in the plot, Harry is the most important character in the novel. Also the second and third important character is Ron and Hermione.
 
