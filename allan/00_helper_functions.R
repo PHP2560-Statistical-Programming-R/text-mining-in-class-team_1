@@ -4,7 +4,7 @@
 ## It makes sure you have them on your computer before proceeding.
 source("allan/check_packages.R")
 check_packages(c("gutenbergr","dplyr","stringr","tidytext",
-                 "ggplot2", "wordcloud", "RColorBrewer", "ggrepel",
+                 "ggplot2", "wordcloud", "RColorBrewer","tidyr", "ggrepel",
                  "igraph","ggraph","XML","RCurl","rebus","topicmodels"),
                c("R.utils")
 )
