@@ -209,21 +209,23 @@ name = tibble(name = unique(c(characters$first_name, characters$last_name)))%>%
 name_freq = whole_series%>%
 
   inner_join(name, by = c(word = "lower"))%>%
-  count(book, word)%>%
-  group_by(book)%>%
+  count(word)%>%
   top_n(10)%>%
   arrange(desc(n))%>%
   ungroup()%>%
-  mutate(word = reorder(word, n))
+  mutate(word = reorder(str_to_title(word), n))
  
 
 
 
-ggplot(name_freq, aes(x = word, y = n, fill = book))+
+ggplot(name_freq, aes(x = word, y = n, fill = n))+
    geom_col(show.legend = FALSE) +
-  facet_wrap(~book, scales = "free") +  
+   
+   
+  
 
-  coord_flip()
+  coord_flip()+
+  ggtitle("Popular characters")
  
 #As we can see in the plot, Harry is the most important character in the novel. Also the second and third important character is Ron and Hermione.
 
@@ -343,6 +345,8 @@ ggplot(emotion_in_chap, aes(x = chapter, y = contribution, color = book))+
 
   
 ```
+
+
 ##2.2 Sentiment by popularity
 ```{r}
 score = get_sentiments("afinn")
@@ -359,10 +363,13 @@ sentiment_by_popularity = whole_series%>%
   ungroup()%>%
   unique()
 
-ggplot(sentiment_by_popularity, aes(x = book, y = sales, fill = contribution), stat = "identity")+
-  geom_col()+
-  scale_x_discrete(limits = sentiment_by_popularity$book)+
-  coord_flip()
+ggplot(sentiment_by_popularity)+
+  geom_bar( aes(x = book, y = sales, fill = contribution), stat = "identity")+
+  
+  geom_point(aes(x=book, y=sales, colour=book))+
+  geom_line(aes(x=book, y=sales, group = 1))+
+  scale_x_discrete(limits = sentiment_by_popularity$book)
+  
 
 
 
