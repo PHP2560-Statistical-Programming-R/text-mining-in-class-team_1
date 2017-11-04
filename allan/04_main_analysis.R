@@ -4,6 +4,7 @@
 # load required data
 load("allan/data/harrypotter_clean_tokens.Rda")
 load("allan/data/harrypotter_characters.rda")
+load("allan/data/book_metadata.rda")
 
 ###Q1. what is the most important charecter based on how much it was mentioned
 generate_q1_graph <- function() {
