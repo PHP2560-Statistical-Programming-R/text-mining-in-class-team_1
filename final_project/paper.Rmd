@@ -42,3 +42,6 @@ Harry being the main character in the entire series, it’s clear that his name 
 
 Looks like sentimental score is proportional to the sale/Popularity. But there could be a confounding variable existing or temporal association of variables
 
+###Q5. what is the most important thing for Harry Potter based on how much is whas mentioned in the analysis about him?
+
+![*Fig. 6* Word Cloud for Harry Potter Character Summary](graph/Q1pic.PNG)
