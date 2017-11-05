@@ -2,8 +2,9 @@
  load("final_project/data/harrypotter_clean_tokens.Rda")
  load("final_project/data/harrypotter_characters.rda")
 harrypoterclean <- harrypotter_clean_tokens
+
 characters_listjoin <- harrypotter_characters %>%
-  mutate(word = tolower(characters_listjoin$FirstName))
+  mutate(word = tolower(harrypotter_characters$FirstName))
 
   
 graph.nourQ <- function(){
@@ -33,4 +34,5 @@ harrypoterclean %>%
   )
   ggsave("final_project/graph/nourQ.png")
 }
-graph.nourQ
+
+graph.nourQ()
