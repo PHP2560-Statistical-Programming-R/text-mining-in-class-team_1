@@ -2,60 +2,24 @@
 title: "Text Mining"
 author: "Yimo Zhang"
 date: "2017.11.5"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 
 
-
-# Your mission
-
-Perform text analysis.
-
-## Okay, I need more information
-
-Perform sentiment analysis or topic modeling using text analysis methods as demonstrated in the pre-class work and in the readings.
-
-## Okay, I need even more information.
-
-Do the above. Can't think of a data source?
-
-- `gutenbergr`
-- `AssociatedPress` from the `topicmodels` package
-- `NYTimes` or `USCongress` from the `RTextTools` package
-- Harry Potter Complete 7 Books text
-    ```{r}
-    if (packageVersion("devtools") < 1.6) {
-  install.packages("devtools")
-}
-
-devtools::install_github("bradleyboehmke/harrypotter")
-    ```
-- [State of the Union speeches](https://pradeepadhokshaja.wordpress.com/2017/03/31/scraping-the-web-for-presdential-inaugural-addresses-using-rvest/)
-- Scrape tweets using [`twitteR`](https://www.credera.com/blog/business-intelligence/twitter-analytics-using-r-part-1-extract-tweets/)
-
-Analyze the text for sentiment OR topic. **You do not need to do both**. The datacamp courses and [Tidy Text Mining with R](http://tidytextmining.com/) are good starting points for templates to perform this type of analysis, but feel free to *expand beyond these examples*.
-
-# Timelines and Task
-
-
-We will spend the next 2 weeks working on analyzing textual data in R. You will do the following:
-
-- Start with some text based data.
-- Clean data and prepare it for analysis
-- Ask questions about the data
-- Answer these questions with the data using tables and graphics
-- Each group member must have their own unique question that they code the answer for. 
-
 # Group Question Sets
 
-## Questions for analysis: 
-## 1. what is the most important charecter based on how much is whas mentioned ? 
-## 2. what is the most scariest book based on sentiment analysis ?
-## 3. what the top ten used words in exception to stop words ?
-## 4. sentiments by books 
-## 5. sentiment by popularity based on "https://www.theguardian.com/news/datablog/2012/aug/09/best-selling-books-all-time-fifty-shades-grey-compare" 
-# And the sixth question is unique for every student.
+### Questions for analysis: 
+### 1. what is the most important charecter based on how much is whas mentioned ? 
+### 2. what is the most scariest book based on sentiment analysis ?
+### 3. what the top ten used words in exception to stop words ?
+### 4. sentiments by books 
+### 5. sentiment by popularity based on "https://www.theguardian.com/news/datablog/2012/aug/09/best-selling-books-all-time-fifty-shades-grey-compare" 
+### And the other questions is unique for every student.
+
+###*In order to differenciate the group questions and my unique questions, the group questions are marked red.*
 
 
 #0. Package load and environment setting.
@@ -229,7 +193,8 @@ name = tibble(name = unique(c(characters$first_name, characters$last_name)))%>%
 
 
 #2. Text Analysis
-##2.1 Q1: who is the most important charecter based on how often he/she was mentioned ?
+
+##*<span style="color:red">2.1 who is the most important charecter based on how often it was mentioned ?</span>*
 ```{r}
 #Count the frequency of character names and select ten of them.
 name_freq = whole_series%>%
@@ -249,7 +214,7 @@ ggplot(name_freq, aes(x = word, y = n, fill = n))+
  plot_theme
 ```
 
-##2.2 Q2: What's the difference between the frequency of the name "Ron" and "Hermione" through chapters
+##2.2 What's the difference between the frequency of the name "Ron" and "Hermione" through chapters
 ```{r}
 #Calculate the difference of frequency of Ron and Hermione
 ron_minus_herm = whole_series%>%
@@ -270,7 +235,7 @@ ggplot(ron_minus_herm, aes(as.integer(chapter), dif, fill = signal))+
 ```
 
 
-##2.3 Q3. what the top ten used words in exception to stop words ?
+##*<span style="color:red">2.3 what the top ten used words in exception to stop words ?</span>*
 ```{r}  
 word_freq = whole_series%>%
   anti_join(stop_words)%>%
@@ -287,7 +252,7 @@ wordcloud(words = word_freq$word, freq = word_freq$n, min.freq = 5, max.words = 
 
 
 #3. Sentiment analysis
-##3.1 what is the most scariest book based on sentiment analysis ?
+##*<span style="color:red">3.1 what is the most scariest book based on sentiment analysis ?</span>*
 ```{r}
 #Load nrc
 emotion = get_sentiments("nrc")
@@ -320,26 +285,38 @@ ggplot(scare_emotion,aes(x = book, y = percent, fill = book))+
   plot_theme
 ``` 
 
-##3.2 Q2.The frequency of emotions
+##*<span style="color:red">3.2 Sentiment by book</span>*
 ```{r}  
-#Select out positive and negative
-  harry_sentiment = whole_series%>%
+score = get_sentiments("afinn")
+
+harry_sentiment = whole_series%>%
     inner_join(emotion, by = "word")%>%
-    filter(sentiment != "positive" & sentiment != "negative")%>%
-    count(book, year, sentiment)%>%
-    arrange(n)
+    inner_join(score, by = "word")%>%
+    group_by(book, sentiment)%>%
+    mutate(score = sum(score), signal = as.character(abs(score)/score+1), total = n())%>%
+  ungroup()%>%
+  mutate(sentiment = reorder(sentiment, total))
+
+harry_sentiment$signal <- factor(harry_sentiment$signal, levels=c("0", "2"), labels=c("Score<0","Score>0"))
   
-ggplot(harry_sentiment, aes(reorder(sentiment, n), n, fill = sentiment))+
+ggplot(harry_sentiment, aes(sentiment, total, fill = signal))+
     geom_col()+
-    facet_wrap(~book)+
+    facet_wrap(~book, ncol = 3, scales = "free_y")+
     theme(axis.title.x=element_blank(),
         axis.text.x=element_blank())+
-  labs(y = "Frequency")+
-  ggtitle("The Frequency of Words Related to Different Emotions")+
+  ggtitle("Sentiment by Book")+
   scale_fill_discrete(name = "Sentiment")+
-  labs(x = NULL, y = "Frequency")+
+  scale_color_manual(labels = c("Score<0", "Score>0"), values = c("indianred4", "turquoise4"))+
+  labs(y = "Count")+
   plot_theme+
-  theme(axis.line.x = element_blank())
+  
+  theme(panel.spacing = unit(0.3, "lines"))+
+  scale_linetype_discrete("Model 1") +
+  scale_shape_discrete("Model 1") +
+  scale_colour_discrete("Model 1")+
+  coord_flip()
+
+ 
 ```
 
 ##3.3 The change of "anger" through chapters
@@ -363,7 +340,7 @@ ggplot(anger, aes(x = chapter, y = percent, color = book))+
 ```
 
 
-##3.4 Q4. How does sentiment change through chapter.
+##3.4 How does sentiment change through chapter.
 ```{r}
 #Load afinn
 score = get_sentiments("afinn")
@@ -385,9 +362,8 @@ ggplot(emotion_in_chap, aes(x = chapter, y = contribution, color = book))+
 ```
 
 
-##3.5 Sentiment by popularity
+##*<span style="color:red">3.5 Sentiment by popularity</span>*
 ```{r}
-#Load afinn
 score = get_sentiments("afinn")
 
 sentiment_by_popularity = whole_series%>%
@@ -408,7 +384,7 @@ ggplot(sentiment_by_popularity)+
   scale_fill_continuous(name = "Sentiment Contribution")+
   coord_flip()+
   plot_theme+
-  theme(legend.position = c("right"), legend)
+  theme(legend.position = c("right"))
   
 ```
 
