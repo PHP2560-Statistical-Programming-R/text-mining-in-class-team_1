@@ -35,4 +35,7 @@ harrypoterclean %>%
   ggsave("final_project/graph/nourQ.png")
 }
 
+
+
 graph.nourQ()
+
