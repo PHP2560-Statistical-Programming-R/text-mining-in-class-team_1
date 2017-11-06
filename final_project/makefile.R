@@ -12,4 +12,5 @@ source("final_project/00_ setting up R .R") # setting up R enviroment
 source("final_project/01_web_scraping.R")  # importing and cleaning data
 source("final_project/03_clean_data.R") # webscraping and cleaning of characters names 
 source("final_project/04_main_analysis.R")  # analysis and questions answering 
+source("final_project/05_nourQ")
 rmarkdown::render("final_project/paper.Rmd", output_format = "pdf_document")

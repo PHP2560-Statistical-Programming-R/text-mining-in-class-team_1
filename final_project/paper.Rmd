@@ -42,3 +42,5 @@ Harry being the main character in the entire series, it’s clear that his name 
 
 Looks like sentimental score is proportional to the sale/Popularity. But there could be a confounding variable existing or temporal association of variables
 
+###QS. Nour most mentioned characters by book 
+![*Fig.5* HP ](graph/nourQ.png)
