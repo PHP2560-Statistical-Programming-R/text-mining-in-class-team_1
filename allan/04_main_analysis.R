@@ -33,6 +33,7 @@ generate_q1_graph <- function() {
 generate_q2_graph <- function() {
   hp_negative_sentiment <- harrypotter_clean_tokens %>%
     inner_join(get_sentiments("bing"), by = "word") %>% # join sentiment
+    mutate(Title = gsub("Harry Potter and the ", "", Title)) %>% # shorten
     group_by(Title) %>% # make each row  abook
     count(sentiment, sort = TRUE) %>% # count sentiment
     filter(sentiment == "negative")  #filter by negative sentiment
@@ -41,7 +42,9 @@ generate_q2_graph <- function() {
     ggplot(aes(Title, n, fill = Title)) +
     geom_bar(stat = "identity") +
     labs(x = NULL, y = "Level") +
-    theme(legend.position = "none") +
+    theme(legend.position = "none",
+          axis.text=element_text(size=4),
+          axis.title=element_text(size=5,face="bold")) +
     coord_flip() +
     ggsave('allan/graph/hp_negative_sentiment.q2.png')
 }
@@ -57,13 +60,14 @@ generate_q3_graph <- function() {
   save(word_count, file = "allan/data/hp_word_count.q3.Rda")
   
   # plot using word cloud
-  png("allan/graph/word_count.q3.png")
+  png("allan/graph/word_count.q3.png",  width=12,height=8, units='in', res=300)
   wordcloud(
     words = word_count$word,
     freq = word_count$n,
     min.freq = 1,
     random.order = FALSE,
     rot.per = 0.35,
+    scale=c(8,.2),
     colors = brewer.pal(8, "Dark2")
   )
   dev.off()
@@ -77,6 +81,7 @@ generate_q4_graph <- function() {
     inner_join(get_sentiments("nrc"), by = "word") %>%
     # join nrc to get sentiment score
     inner_join(get_sentiments("afinn"), by = "word") %>%
+    mutate(Title = gsub("Harry Potter and the ", "", Title)) %>% # shorten
     group_by(Title, sentiment) %>%
     summarise(count = sum(score)) %>%
     arrange(desc(count))
@@ -91,6 +96,8 @@ generate_q4_graph <- function() {
     labs(x = NULL, y = "Score") +
     facet_wrap( ~ Title) +
     coord_flip() +
+    theme(axis.text=element_text(size=4),
+          axis.title=element_text(size=5,face="bold"))+
     ggsave('allan/graph/hp_sentiment_by_book.q4.png')
 }
 
@@ -106,9 +113,10 @@ generate_q5_graph <- function() {
     mutate(perc_sentiment = (count / sum(count)) * 2) %>%
     arrange(desc(perc_sentiment)) %>%
     inner_join(bookMetadata, by = "Title") %>%
-    mutate(sales = as.numeric(gsub(",", "", Volume.Sales)))
+    mutate(sales =Volume.Sales)
   
-  df <- data.frame(hp_by_sales)
+  df <- data.frame(hp_by_sales) %>%
+  mutate(Title = gsub("Harry Potter and the ", "", Title)) 
   # plot the graph
   ggplot(df)  +
     geom_bar(aes(x = Title, y = sales,  fill = Title), stat = "identity") +
@@ -124,11 +132,15 @@ generate_q5_graph <- function() {
       label = sales,
       x = Title,
       y = 0.97 * sales
-    ), colour = "black") +
+    ), colour = "black",  size=2) +
     scale_y_continuous(sec.axis = sec_axis( ~ . / max(df$sales))) +
     labs(x = "Book", y = "Sales/Popularity") +
     theme(axis.text.x = element_blank(),
-          axis.ticks.x = element_blank()) +
+          axis.ticks.x = element_blank(),
+          legend.title=element_text(size=6) ,
+          legend.text=element_text(size=5),
+          axis.text=element_text(size=4),
+          axis.title=element_text(size=5,face="bold")) +
     ggsave('allan/graph/hp_by_sales.q5.png')
   
 }
