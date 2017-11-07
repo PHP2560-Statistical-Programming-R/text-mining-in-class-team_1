@@ -1,4 +1,4 @@
-wrangle_and_clean <- function(){
+clean_data <- function(){
   library(harrypotter)
   #Write a function for data cleaning
   book_tidy = function(name, title_name){
@@ -67,9 +67,37 @@ wrangle_and_clean <- function(){
     whole_series$book = relevel(as.factor(whole_series$book), ref = title_names[i])
   }
   
-  save(whole_series, file = "Yimo/data/whole_series.Rda")
-  save(harrypotter, file = "Yimo/data/haarrypotter.Rda")
   
+  
+  book_to_gram = function(name, title_name){
+    #Add chapter
+    pattern = one_or_more(one_or_more(UPPER) %R% optional(SPC) %R% optional("-"))
+    pattern_chapter = capture(pattern) %R% SPC %R% SPC
+    chapter_name = str_extract(get(name), pattern =pattern_chapter)
+    chapter = tibble(text = get(name), chapter_name = chapter_name)%>%
+      mutate(chapter = row_number())
+    #Add sentence
+    sentence = chapter%>%
+      unnest_tokens(sentence, text, token = "sentences")%>%
+      mutate(sentences = row_number())
+    #Add word  
+    df = sentence %>%
+      unnest_tokens(bigram, sentence, token = "ngrams", n = 2)
+    #Add book
+    title = tibble(book = title_name)
+    return(cbind(title, df))
+  }
+  
+  
+  harry_gram = tibble()
+  
+  for(i in 1:length(names)){
+    harry_gram = rbind(harry_gram, book_to_gram(names[i], title_names[i]))
+  }
+  
+  save(whole_series, file = "Yimo/data/whole_series.Rda")
+  save(harrypotter, file = "Yimo/data/harrypotter.Rda")
+  save(harry_gram, file = "Yimo/data/harry_gram.Rda")
 }
 
-wrangle_and_clean()
+clean_data()
