@@ -6,6 +6,7 @@ load("allan/data/harrypotter_characters.rda")
 ###Q6.How does sentiment changes from 1 chapter to the next for each book? Which book has the highest variation?
 generate_q6_graph <- function() {
   hp_df <- harrypotter_clean_tokens %>%
+    mutate(Title = gsub("Harry Potter and the ", "", Title)) %>% # shorten
     inner_join(get_sentiments("bing"), by = "word") %>% # join sentiment
     count(Title, Chapter, sentiment, sort = TRUE) %>% # count sentiment
     spread(sentiment, n, fill = 0) %>%
@@ -13,7 +14,7 @@ generate_q6_graph <- function() {
   
   ggplot(hp_df, aes(Chapter, sentiment, fill = Title)) +
     geom_line(size = 1, color = brewer.pal(3, "Set1")[3]) +
-    facet_wrap(~ Title, ncol = 2, scales = "free_x") +
+    facet_wrap(~ Title) +
     ggsave('allan/graph/hp_sentiment_changes.q6.png')
 }
 
@@ -59,7 +60,6 @@ generate_q7_graph <- function() {
   a <- grid::arrow(type = "closed", length = unit(.10, "inches"))
   
   # generate graph
-  png("allan/graph/bigram_network_model.q7.png")
   ggraph(bigram_graph, layout = "fr") +
     geom_edge_link(
       aes(edge_alpha = n),
@@ -68,9 +68,10 @@ generate_q7_graph <- function() {
       end_cap = circle(.07, 'inches')
     ) +
     geom_node_point(color = "chartreuse", size = 5) +
-    geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
-    theme_void()
-  dev.off()
+    geom_node_text(aes(label = name), check_overlap = T, vjust = 1, hjust = 1) +
+    theme_void()+
+    ggsave("allan/graph/bigram_network_model.q7.png")
+
 }
 
 ###Q8.How often did the writer negated clauses? Examine how often sentiment-associated words are preceded by “not” or other negating words.
@@ -100,7 +101,7 @@ generate_q8_graph <- function() {
     mutate(word2 = reorder(word2, contribution)) %>%
     ggplot(aes(word2, nn * score, fill = nn * score > 0)) +
     geom_col(show.legend = FALSE) +
-    xlab("Words preceded by \"not\"") +
+    xlab("Words preceded by \"not\", \"no\" ") +
     ylab("Sentiment score * number of occurrences") +
     coord_flip()+
     ggsave('allan/graph/hp_negated_words.q8.png')

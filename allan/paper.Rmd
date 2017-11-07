@@ -5,8 +5,10 @@ date: "November 2, 2017"
 output: html_document
 ---
 
+![](harry.png)
 
-## Basic Information
+## Background Information
+
 Harry Potter is a series of fantasy novels written by British author J. K. Rowling. The world was introduced to Harry Potter on June 26, 1997.Twenty years later, Harry Potter and the Philosophers Stone, the first book in the series, is one of the bestselling books of all time. According to Scholastic, more than 400 million copies of Harry Potter titles have been sold worldwide, and they’ve been translated into 68 languages. For more information: [Wiki](https://en.wikipedia.org/wiki/Harry_Potter).
 
 Harry Potter being one of the most popular novel, we though we should try do some basic yet informative frequency & sentimental analysis
@@ -24,24 +26,52 @@ Now let's do some analysis!
 ## Quantitative and Sentimental Analysis
 ###Q1. Who is the most important charecter based on how much he/she was mentioned 
 ![*Fig. 1* HP ](graph/harrypotter_clean_tokens.q1.png)
+
 Harry being the main character in the entire series, it’s clear that his name is mentioned with highest frequency. The author did a pretty nice job 
 
 ###Q2. Which is the most scariest book based on sentiment analysis ?
 ![*Fig. 2* HP ](graph/hp_negative_sentiment.q2.png)
 
- Using bing lexicon, Harry Potter and the Order of the Phoenix is the scariest with about 8k negative sentiments
+Using bing lexicon, Harry Potter and the Order of the Phoenix is the scariest with about 8k negative sentiments
 
 ###Q3. What the top ten used words in exception to stop words ?
 ![*Fig. 3* HP ](graph/word_count.q3.png)
 
-###Q4. sentiments by books 
+```{r  echo=FALSE}
+load("data/hp_word_count.q3.Rda")
+knitr::kable(head(word_count, 10))
+```
+
+
+###Q4. How doeas sentiment differ from one book to the next?
 ![*Fig. 4* HP ](graph/hp_sentiment_by_book.q4.png)
 
-###Q5. sentiment by popularity based on www.theguardian.com
+Order of the Phoenix, Deathly Hallows, Half-blood Prince and Deathly Hallows use more negatvie sentiments while the rest use more positive sentiments
+
+
+###Q5. Did sentiment differences from one book to the next affected sales/popularity? Use sales metadata in www.theguardian.com
+
 ![*Fig.5* HP ](graph/hp_by_sales.q5.png)
 
-Looks like sentimental score is proportional to the sale/Popularity. But there could be a confounding variable existing or temporal association of variables
+Looks like negative sentimental score is proportional to the sale/Popularity. Books which had more negative words resulted in higher sales
 
 ###Q6.How does sentiment changes from 1 chapter to the next for each book? Which book has the highest variation?
 ![*Fig.5* HP ](graph/hp_sentiment_changes.q6.png)
-# Both the graph and standard deviation tells us that Harry Potter and the Deathly Hallows has the highest sentimental variation. 
+
+Both the graph and standard deviation tells us that Harry Potter and the Deathly Hallows has the highest sentimental variation. 
+
+###Q7. Which is the most common word pairs in harry potter series? Analyze their network structure of word pairs
+![*Fig.7* HP ](graph/bigram_counts.q7.png)
+
+It is clear that potter and professor are the most associated words existsing with other pairs.
+
+###Network structure of word pairs
+
+![*Fig.7B* HP ](graph/bigram_network_model.q7.png)
+
+Most word pairs are distributed in cluster like structures. The author seemed to have used word pairs at  very high frequency
+
+###Q8.Examine how often sentiment-associated words are preceded by “not” or other negating words. How often did the writer negated clauses? 
+![*Fig.8* HP ](graph/hp_negated_words.q8.png)
+
+The author highly associated positive sentiments like "good, love, great" with negative clause. On the other hand, she assocaited highly negative sentiments like "die, betray, fail" with negative clause.

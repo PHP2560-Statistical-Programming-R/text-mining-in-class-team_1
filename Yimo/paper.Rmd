@@ -1,13 +1,12 @@
 ---
 title: "Harry Potter Text Mining & Sentimental Analysis"
-author: "Allan Kimaina"
-date: "November 2, 2017"
+author: "Yimo Zhang"
+date: "2017.11.06"
 output: html_document
 ---
 
-![](harry.png)
 
-## Background Information
+## Basic Information
 Harry Potter is a series of fantasy novels written by British author J. K. Rowling. The world was introduced to Harry Potter on June 26, 1997.Twenty years later, Harry Potter and the Philosophers Stone, the first book in the series, is one of the bestselling books of all time. According to Scholastic, more than 400 million copies of Harry Potter titles have been sold worldwide, and they’ve been translated into 68 languages. For more information: [Wiki](https://en.wikipedia.org/wiki/Harry_Potter).
 
 Harry Potter being one of the most popular novel, we though we should try do some basic yet informative frequency & sentimental analysis
@@ -22,34 +21,49 @@ We got our hands dirty by doing some basic web scraping on https://en.wikipedia.
 
 Now let's do some analysis!
 
-## Quantitative and Sentimental Analysis
-###Q1. Who is the most important charecter based on how much he/she was mentioned 
-![*Fig. 1* HP ](graph/harrypotter_clean_tokens.q1.png)
+## Frequency Analysis
+###1. Who is the most important charecter based on how much he/she was mentioned 
+![*Fig. 1* HP ](graph/name_freq.q1.png)
 Harry being the main character in the entire series, it’s clear that his name is mentioned with highest frequency. The author did a pretty nice job 
 
-###Q2. Which is the most scariest book based on sentiment analysis ?
-![*Fig. 2* HP ](graph/hp_negative_sentiment.q2.png)
+###2. The Difference of Frequency Between Ron and Hermione
+![*Fig. 2* HP ](graph/ron_minus_herm.q2.png)
 
  Using bing lexicon, Harry Potter and the Order of the Phoenix is the scariest with about 8k negative sentiments
 
-###Q3. What the top ten used words in exception to stop words ?
-![*Fig. 3* HP ](graph/word_count.q3.png)
+###3. What are the top ten used words in exception to stop words ?
+![*Fig. 3* HP ](graph/word_freq.q3.png)
 
-```{r  echo=FALSE}
-load("data/hp_word_count.q3.Rda")
-knitr::kable(head(word_count, 10))
-```
+###4. what is the most scariest book based on sentiment analysis ?
+![*Fig. 4* HP ](graph/scare_emotion.q4.png)
+
+###5. Sentiment by book
+![*Fig.5* HP ](graph/harry_sentiment.q5.png)
 
 
-###Q4. sentiments by books 
-![*Fig. 4* HP ](graph/hp_sentiment_by_book.q4.png)
+###6. The change of "anger" through chapters
+![*Fig.6* HP ](graph/anger.q6.png)
 
-Order of the Phoenix, Deathly Hallows, Half-blood Prince and Deathly Hallows use more negatvie sentiments while the rest use more positive sentiments
 
-###Q5. sentiment by popularity based on www.theguardian.com
-![*Fig.5* HP ](graph/hp_by_sales.q5.png)
 
-Looks like negative sentimental score is proportional to the sale/Popularity. Books which had more negative words resulted in higher sales
 
-###QS. /Nour/ most mentioned characters by book 
-![*Fig.5* HP ](graph/nourQ.png)
+###7. How does sentiment change through chapter?
+![*Fig.7* HP ](graph/emotion_in_chap.q7.png)
+
+
+
+###8. Sentiment by popularity
+![*Fig.8* HP ](graph/sentiment_by_pop.q8.png)
+
+###9. Term Frequency
+![*Fig.9* HP ](graph/term_frequency.q9.png)
+
+###10. Zipf's Law
+![*Fig.10* HP ](graph/zip_law.q10.png)
+
+
+###11. N-grams
+![*Fig.11* HP ](graph/ngram.q11.png)
+
+
+
