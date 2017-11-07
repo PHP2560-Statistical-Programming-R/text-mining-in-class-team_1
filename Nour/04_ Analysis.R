@@ -2,6 +2,7 @@
 load("Nour/data/characters_listjoin.Rda")
 load("Nour/data/harrypoterclean.Rda")
 
+
 ##Q1 what is the most important charecters based on how much is whas mentioned aside from harry ? 
 graphQ1 <- function(){
 harrypoterclean %>%
