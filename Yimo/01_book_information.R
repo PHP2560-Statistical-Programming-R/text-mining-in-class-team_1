@@ -1,5 +1,6 @@
 
-
+#Get Bookmetadata which contains the publication year and volume sales;
+#Also get the character names from "harry_potter_characters.txt"
 book_information <- function(){
   # Fetch Book metadata from theGuardian.com e.g publisher, ranking, sales, author e.t.c 
   bookMetadata <- as_tibble(read.csv("https://docs.google.com/spreadsheets/d/1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA/export?format=csv&id=1dhxblR1Vl7PbVP_mNhwEa3_lfUWiF__xSODLq1W83CA&gid=0"))
