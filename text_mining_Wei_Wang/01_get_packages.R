@@ -3,6 +3,7 @@
 
 source("check_packages.R")
 check_packages(c("wordcloud",
+                 "devtools",
                  "tidyverse",
                  "stringr",
                  "tidytext",
@@ -12,5 +13,20 @@ check_packages(c("wordcloud",
                  "ggraph",
                  "ggplot2"))
 
-devtools::install_github("bradleyboehmke/harrypotter", force = TRUE)
 
+library(wordcloud)
+library(devtools)
+library(tidyverse)      
+library(stringr)        
+library(tidytext)
+library(dplyr)
+library(reshape2)
+library(igraph)
+library(ggraph)
+library(ggplot2)
+
+if (packageVersion("devtools") < 1.6) {
+  install.packages("devtools")
+}
+
+devtools::install_github("bradleyboehmke/harrypotter", force = TRUE)
