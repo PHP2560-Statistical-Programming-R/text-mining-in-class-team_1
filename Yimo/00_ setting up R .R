@@ -1,5 +1,5 @@
 # check that all required packages are installed 
-source("check_packages.R")
+source("Yimo/check_packages.R")
 check.packages(c("devtools","rebus","tidytext", "dplyr", "stringr", "stringi", "ggplot2", 
                  "tidyverse","scales","wordcloud","igraph", "ggraph"))
 
