@@ -1,6 +1,3 @@
-
-
-
 # load required data
 load("Yimo/data/whole_series.Rda")
 load("Yimo/data/name.rda")
@@ -19,7 +16,6 @@ name_freq = whole_series%>%
   inner_join(name, by = c(word = "lower"))%>%
   count(word)%>%
   top_n(10)%>%
-  arrange(desc(n))%>%
   ungroup()%>%
   mutate(word = reorder(str_to_title(word), n))
 
@@ -137,7 +133,6 @@ ggplot(harry_sentiment, aes(sentiment, total, fill = signal))+
   scale_color_manual(labels = c("Score<0", "Score>0"), values = c("indianred4", "turquoise4"))+
   labs(y = "Count")+
   plot_theme+
-  
   theme(panel.spacing = unit(0.3, "lines"))+
   scale_linetype_discrete("Model 1") +
   scale_shape_discrete("Model 1") +

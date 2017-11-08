@@ -1,4 +1,7 @@
 load("Yimo/data/bookMetadata.rda")
+load("Yimo/data/name.rda")
+
+
 clean_data <- function(){
   library(harrypotter)
   #Write a function for data cleaning
