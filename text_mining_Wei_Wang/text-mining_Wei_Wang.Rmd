@@ -2,13 +2,36 @@
 title: "Text Analyis"
 author: "Wei Wang"
 date : "10/18/2017"
-output: github_document
+output: html_document
 ---
 
 
 # 0. Setup
 ```{r, message=FALSE, warning=FALSE}
 # Load in packages.
+check_packages = function(names)
+{
+  for(name in names)
+  {
+    if (!(name %in% installed.packages()))
+      install.packages(name, repos="http://cran.us.r-project.org")
+    
+    library(name, character.only=TRUE)
+  }
+}
+## This function takes the packages that our program needs. 
+## It makes sure you have them on your computer before proceeding.
+check_packages(c("wordcloud",
+                 "devtools",
+                 "tidyverse",
+                 "stringr",
+                 "tidytext",
+                 "dplyr",
+                 "reshape2",
+                 "igraph",
+                 "ggraph",
+                 "ggplot2"))
+
 
 library(wordcloud)
 library(devtools)

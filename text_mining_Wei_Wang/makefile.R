@@ -1,6 +1,4 @@
-
 ## run all scripts
-source("text_mining_Wei_Wang/01_get_packages.R")  ## get packages
 source("text_mining_Wei_Wang/02_shape_data.R")   ## shape data
 source("text_mining_Wei_Wang/03_clean_data.R")   ## clean data
 source("text_mining_Wei_Wang/04_question_#1.R")  ## create graph and answer

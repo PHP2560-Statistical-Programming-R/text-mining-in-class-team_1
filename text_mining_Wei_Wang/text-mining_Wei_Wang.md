@@ -345,11 +345,7 @@ counting_bing_word <- series %>%
   inner_join(get_sentiments("bing")) %>%
   count(word, sentiment, sort = TRUE) %>%
   ungroup()
-```
 
-    ## Joining, by = "word"
-
-``` r
 counting_bing_word
 ```
 
@@ -379,7 +375,5 @@ counting_bing_word %>%
           labs(y = "Contribution to sentiment", x = NULL) +
           coord_flip()
 ```
-
-    ## Selecting by n
 
 ![](text-mining_Wei_Wang_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-13-1.png)

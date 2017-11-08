@@ -1,3 +1,44 @@
+check_packages = function(names)
+{
+  for(name in names)
+  {
+    if (!(name %in% installed.packages()))
+      install.packages(name, repos="http://cran.us.r-project.org")
+    
+    library(name, character.only=TRUE)
+  }
+}
+## This function takes the packages that our program needs. 
+## It makes sure you have them on your computer before proceeding.
+check_packages(c("wordcloud",
+                 "devtools",
+                 "tidyverse",
+                 "stringr",
+                 "tidytext",
+                 "dplyr",
+                 "reshape2",
+                 "igraph",
+                 "ggraph",
+                 "ggplot2"))
+
+
+library(wordcloud)
+library(devtools)
+library(tidyverse)      
+library(stringr)        
+library(tidytext)
+library(dplyr)
+library(reshape2)
+library(igraph)
+library(ggraph)
+library(ggplot2)
+
+if (packageVersion("devtools") < 1.6) {
+  install.packages("devtools")
+}
+
+devtools::install_github("bradleyboehmke/harrypotter", force = TRUE)
+
 
 hp_books <- c("Harry Potter and the Philosopher's Stone", 
               "Harry Potter and the Chamber of Secrets", 
