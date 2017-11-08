@@ -7,10 +7,10 @@ check.packages(c("devtools","rebus","tidytext", "dplyr", "stringr", "stringi", "
 create_theme = function(){
 plot_theme = theme(text = element_text(color = "darkslategrey"),
                    legend.position = c("bottom"),
-                   legend.text = element_text(size = 8, color = "darkblue", face = "bold", hjust = 0.5),
+                   legend.text = element_text(color = "darkblue", face = "bold", hjust = 0.5),
                    legend.background = element_rect(fill = "azure"),
                    legend.title = element_text(face = "bold", color = "darkslategrey"),
-                   axis.line = element_line(color = "lightblue3", size = 0.6),
+                   axis.line = element_line(color = "lightblue3"),
                    axis.text = element_text(face = "bold", color = "darkslategrey"),
                    axis.title = element_text(color="darkslategrey"),
                    axis.ticks.y = element_blank(),

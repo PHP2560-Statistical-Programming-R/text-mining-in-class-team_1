@@ -256,6 +256,17 @@ ggplot(freq_term, aes(n/total, fill = book)) +
 
 ##10. Zipf's Law
 q10 = function(){
+  count_word = whole_series%>%
+    count(book, word, sort = T)%>%
+    ungroup()
+  
+  total_words = count_word%>%
+    group_by(book)%>%
+    summarize(total = sum(n))
+  
+  freq_term = count_word%>%
+    left_join(total_words)
+  
 freq_by_rank <- freq_term %>% 
   group_by(book) %>% 
   mutate(rank = row_number(), 
