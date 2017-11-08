@@ -2,6 +2,8 @@
 # load required data
 load("allan/data/harrypotter_clean_tokens.Rda")
 load("allan/data/harrypotter_characters.rda")
+load("allan/data/book_metadata.rda")
+load("allan/data/harrypotterSeries.rda")
 
 ###Q6.How does sentiment changes from 1 chapter to the next for each book? Which book has the highest variation?
 generate_q6_graph <- function() {
