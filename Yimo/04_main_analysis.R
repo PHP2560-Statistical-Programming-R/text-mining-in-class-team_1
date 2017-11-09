@@ -10,7 +10,7 @@ load("Yimo/data/harry_gram.rda")
 
 #Count the frequency of character names and select ten of them.
 q1 <- function() {
-  
+#Select the top 10 most frequently mentioned characters.  
 name_freq = whole_series%>%
   anti_join(stop_words)%>%
   inner_join(name, by = c(word = "lower"))%>%
@@ -54,7 +54,7 @@ ggplot(ron_minus_herm, aes(as.integer(chapter), dif, fill = signal))+
 
 ###3. what the top ten used words in exception to stop words ?
 q3 <- function() {
-  
+#Remove stop words
 word_freq = whole_series%>%
   anti_join(stop_words)%>%
   count(word)
@@ -110,20 +110,23 @@ ggplot(scare_emotion,aes(x = book, y = percent, fill = book))+
 
 ###5. Sentiment by book
 q5 <- function() {
+#load afinn
 score = get_sentiments("afinn")
+#load nrc
 emotion = get_sentiments("nrc")
 
+#Calculate the sentiment score
 harry_sentiment = whole_series%>%
   inner_join(emotion, by = "word")%>%
   inner_join(score, by = "word")%>%
   group_by(book, sentiment)%>%
-  mutate(score = sum(score), signal = as.character(abs(score)/score+1), total = n())%>%
+  mutate(score = sum(score), signal = as.character(abs(score)/score+1), total = n())%>% #signal measure whether the score is positive or negative
   ungroup()%>%
   mutate(sentiment = reorder(sentiment, total))
 
-harry_sentiment$signal <- factor(harry_sentiment$signal, levels=c("0", "2"), labels=c("Score<0","Score>0"))
+harry_sentiment$signal <- factor(harry_sentiment$signal, levels=c("0", "2"), labels=c("Score<0","Score>0"))#reset the name displayed in the legend
 
-ggplot(harry_sentiment, aes(sentiment, total, fill = signal))+
+ggplot(harry_sentiment, aes(sentiment, score, fill = signal))+
   geom_col()+
   facet_wrap(~book, ncol = 3, scales = "free_y")+
   theme(axis.title.x=element_blank(),
@@ -144,10 +147,15 @@ ggplot(harry_sentiment, aes(sentiment, total, fill = signal))+
 
 ##6. The change of "anger" through chapters
 q6 = function(){
+  #The total words of each book
   total = whole_series%>%
     count(book)%>%
     rename(total_word = n)
+  
+  #load nrc
   emotion = get_sentiments("nrc")
+  
+  #count the percent of words related to anger
 anger = whole_series%>%
   inner_join(total)%>%
   inner_join(emotion, by = "word")%>%
@@ -173,6 +181,7 @@ q7 = function(){
 #Load afinn
 score = get_sentiments("afinn")
 
+#Calculate sentiment score based on book and chapter
 emotion_in_chap = whole_series%>%
   count(book, chapter, word)%>%
   inner_join(score, by = "word")%>%
@@ -194,8 +203,10 @@ ggplot(emotion_in_chap, aes(x = chapter, y = contribution, color = book))+
 
 ##8. Sentiment by popularity
 q8 = function(){
+  #load afinn
 score = get_sentiments("afinn")
 
+#Get sales and sentiment score of each book
 sentiment_by_popularity = whole_series%>%
   count(book, chapter, word)%>%
   inner_join(score, by = "word")%>%
